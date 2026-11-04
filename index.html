@@ -3,1627 +3,1029 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aviation Fleet Cabin Signalling & Intercom Simulator</title>
+  <title>Airbus A321 Enhanced CIDS & Cabin Signalling Simulator</title>
+  
+  <!-- PWA Manifest & App Icons -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%0A%20%20%22name%22%3A%20%22Airbus%20A321%20CIDS%20Simulator%22%2C%0A%20%20%22short_name%22%3A%20%22A321%20CIDS%22%2C%0A%20%20%22start_url%22%3A%20%22.%22%2C%0A%20%20%22display%22%3A%20%22standalone%22%2C%0A%20%20%22background_color%22%3A%20%22%23020617%22%2C%0A%20%20%22theme_color%22%3A%20%22%230f172a%22%2C%0A%20%20%22icons%22%3A%20%5B%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%22src%22%3A%20%22data%3Aimage/svg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20100%27%253E%253Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2720%27%20fill%3D%27%25230f172a%27/%253E%253Cpath%20d%3D%27M50%2020%20L65%2045%20L85%2055%20L65%2060%20L60%2080%20L50%2070%20L40%2080%20L35%2060%20L15%2055%20L35%2045%20Z%27%20fill%3D%27%252338bdf8%27/%253E%253Ccircle%20cx%3D%2750%27%20cy%3D%2735%27%20r%3D%275%27%20fill%3D%27%2523f59e0b%27/%253E%253C/svg%253E%22%2C%0A%20%20%20%20%20%20%22sizes%22%3A%20%22192x192%22%2C%0A%20%20%20%20%20%20%22type%22%3A%20%22image/svg%2Bxml%22%0A%20%20%20%20%7D%0A%20%20%5D%0A%7D">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="A321 CIDS">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230f172a'/%3E%3Cpath d='M50 20 L65 45 L85 55 L65 60 L60 80 L50 70 L40 80 L35 60 L15 55 L35 45 Z' fill='%2338bdf8'/%3E%3Ccircle cx='50' cy='35' r='5' fill='%23f59e0b'/%3E%3C/svg%3E">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-    :root {
-      --acp-amber: #f59e0b;
-      --acp-red: #ef4444;
-      --acp-green: #10b981;
-      --acp-blue: #0ea5e9;
-      --acp-pink: #ec4899;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #080d14;
-      color: #e2e8f0;
-      user-select: none;
-    }
-
-    .font-lcd {
-      font-family: 'Share Tech Mono', monospace;
-    }
-
-    .acp-lamp {
-      opacity: 0.16;
-      transition: all 0.22s ease;
-    }
-
-    .acp-lamp.active-amber {
-      opacity: 1;
-      background-color: var(--acp-amber);
-      box-shadow: 0 0 20px var(--acp-amber), 0 0 35px rgba(245, 158, 11, 0.5);
-    }
-    .acp-lamp.flash-amber {
-      background-color: var(--acp-amber);
-      animation: flashAmberAnim 0.5s infinite alternate;
-    }
-
-    .acp-lamp.active-red {
-      opacity: 1;
-      background-color: var(--acp-red);
-      box-shadow: 0 0 24px var(--acp-red), 0 0 45px rgba(239, 68, 68, 0.6);
-    }
-    .acp-lamp.flash-red {
-      background-color: var(--acp-red);
-      animation: flashRedAnim 0.38s infinite alternate;
-    }
-
-    .acp-lamp.active-green {
-      opacity: 1;
-      background-color: var(--acp-green);
-      box-shadow: 0 0 20px var(--acp-green), 0 0 35px rgba(16, 185, 129, 0.5);
-    }
-
-    .acp-lamp.active-blue {
-      opacity: 1;
-      background-color: var(--acp-blue);
-      box-shadow: 0 0 20px var(--acp-blue), 0 0 35px rgba(14, 165, 233, 0.5);
-    }
-
-    .acp-lamp.active-pink {
-      opacity: 1;
-      background-color: var(--acp-pink);
-      box-shadow: 0 0 20px var(--acp-pink), 0 0 35px rgba(236, 72, 153, 0.5);
-    }
-
-    @keyframes flashAmberAnim {
-      0% { opacity: 0.18; }
-      100% { opacity: 1; box-shadow: 0 0 26px var(--acp-amber); }
-    }
-    @keyframes flashRedAnim {
-      0% { opacity: 0.2; }
-      100% { opacity: 1; box-shadow: 0 0 32px var(--acp-red); }
-    }
-
-    .lcd-screen-phosphor {
-      background: radial-gradient(circle at center, #071f0d 0%, #020b04 100%);
-      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9), 0 0 12px rgba(16, 185, 129, 0.3);
-    }
-    .lcd-screen-oled {
-      background: radial-gradient(circle at center, #061221 0%, #01050a 100%);
-      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9), 0 0 12px rgba(14, 165, 233, 0.3);
-    }
-
-    .btn-key {
-      background: linear-gradient(180deg, #d8d4c7 0%, #b8b3a4 100%);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 3px 0 #787365, 0 4px 6px rgba(0,0,0,0.4);
-      color: #26241e;
-      transition: all 0.08s ease;
-    }
-    .btn-key:active {
-      transform: translateY(2px);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 1px 0 #787365;
-    }
-
-    .btn-key-boeing {
-      background: linear-gradient(180deg, #475569 0%, #334155 100%);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 3px 0 #1e293b, 0 4px 6px rgba(0,0,0,0.4);
-      color: #f8fafc;
-    }
-    .btn-key-boeing:active {
-      transform: translateY(2px);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 0 #1e293b;
-    }
-
-    .btn-key-red {
-      background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 3px 0 #5f1010, 0 4px 6px rgba(0,0,0,0.5);
-      color: #ffffff;
-    }
-    .btn-key-red:active {
-      transform: translateY(2px);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 0 #5f1010;
-    }
-
-    .btn-ptt {
-      background: linear-gradient(180deg, #71717a 0%, #52525b 100%);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 0 #27272a, 0 5px 8px rgba(0,0,0,0.5);
-    }
-    .btn-ptt.active-ptt {
-      transform: translateY(3px);
-      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 1px 0 #78350f, 0 0 15px rgba(245, 158, 11, 0.6);
-      color: #111827;
-    }
-
-    .sticky-header {
-      position: sticky;
-      top: 0.5rem;
-      z-index: 50;
-      backdrop-filter: blur(14px);
-    }
-
-    .mini-acp-lamp {
-      width: 24px;
-      height: 12px;
-      border-radius: 4px;
-      opacity: 0.2;
-      transition: all 0.2s ease;
-    }
-    .mini-acp-lamp.active-amber { opacity: 1; background-color: var(--acp-amber); box-shadow: 0 0 8px var(--acp-amber); }
-    .mini-acp-lamp.flash-amber  { background-color: var(--acp-amber); animation: flashAmberAnim 0.5s infinite alternate; }
-    .mini-acp-lamp.active-red   { opacity: 1; background-color: var(--acp-red); box-shadow: 0 0 10px var(--acp-red); }
-    .mini-acp-lamp.flash-red    { background-color: var(--acp-red); animation: flashRedAnim 0.38s infinite alternate; }
-    .mini-acp-lamp.active-green { opacity: 1; background-color: var(--acp-green); box-shadow: 0 0 8px var(--acp-green); }
-    .mini-acp-lamp.active-blue  { opacity: 1; background-color: var(--acp-blue); box-shadow: 0 0 8px var(--acp-blue); }
-    .mini-acp-lamp.active-pink  { opacity: 1; background-color: var(--acp-pink); box-shadow: 0 0 8px var(--acp-pink); }
+    @keyframes rapidBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+    @keyframes alertTextPulse { 0%, 100% { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.9); } 50% { color: #fca5a5; text-shadow: 0 0 4px rgba(239, 68, 68, 0.4); } }
+    .lamp-amber-flash { animation: rapidBlink 0.6s infinite; background-color: #f59e0b !important; border-color: #fbbf24 !important; box-shadow: 0 0 16px #f59e0b !important; opacity: 1 !important; color: #000 !important; }
+    .lamp-amber-steady { background-color: #f59e0b !important; border-color: #fbbf24 !important; box-shadow: 0 0 14px #f59e0b !important; opacity: 1 !important; color: #000 !important; }
+    .lamp-red-flash { animation: rapidBlink 0.45s infinite; background-color: #ef4444 !important; border-color: #f87171 !important; box-shadow: 0 0 18px #ef4444 !important; opacity: 1 !important; }
+    .led-red-flash { animation: rapidBlink 0.5s infinite; background-color: #ef4444 !important; box-shadow: 0 0 12px #ef4444 !important; }
+    .aip-smoke-text { animation: alertTextPulse 0.8s infinite; }
+    .seat-btn { transition: all 0.15s ease; }
+    .seat-btn:hover { filter: brightness(1.25); transform: scale(1.08); }
+    .seat-active { background-color: #eab308 !important; border-color: #fef08a !important; color: #000 !important; font-weight: bold !important; box-shadow: 0 0 10px #eab308 !important; animation: none !important; }
   </style>
 </head>
-<body class="p-3 md:p-6 min-h-screen flex flex-col justify-between">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center p-2 sm:p-4 select-none">
 
-  <!-- TOP APP BAR WITH STICKY PERSISTENT MINI HUD & EMERGENCY DESCENT STATUS -->
-  <header id="mainHeader" class="sticky-header max-w-7xl mx-auto w-full mb-3 bg-slate-900/95 border border-slate-800 rounded-2xl p-3 md:p-4 shadow-2xl transition-all">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      
-      <!-- Aircraft Title -->
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 shrink-0">
-          <i class="fa-solid fa-plane-up text-base transform -rotate-45"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span id="fleetBadge" class="text-[10px] font-mono tracking-widest uppercase bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded font-bold">
-              AIRBUS A321
-            </span>
-            <span id="fleetSubSys" class="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> CIDS ACTIVE
-            </span>
-          </div>
-          <h1 class="text-sm md:text-base font-bold text-white tracking-tight mt-0.5">
-            Fleet Cabin Signalling & Intercom Simulator
-          </h1>
-        </div>
-      </div>
-
-      <!-- PERSISTENT MINI HUD (VISIBLE ON SCROLL) -->
-      <div id="stickyMiniHud" class="hidden md:flex items-center gap-3 bg-black/80 border border-slate-700/80 px-3 py-1.5 rounded-xl shadow-inner">
-        <div class="flex flex-col justify-center border-r border-slate-700 pr-3 min-w-[130px]">
-          <span class="text-[8px] font-mono text-slate-400 leading-none" id="miniPanelLabel">AIP STATUS:</span>
-          <span id="miniAipText" class="font-lcd text-xs font-bold tracking-wider text-[#39ff14] truncate max-w-[160px]">
-            READY / NORMAL
-          </span>
-        </div>
-        <!-- Mini Dynamic ACP Bar -->
-        <div id="miniAcpContainer" class="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-      <!-- INTEGRATED TOPBAR EMERGENCY DESCENT STATUS STRIP -->
-      <div id="topbarEmerDescentStrip" class="hidden flex-wrap items-center gap-1.5 bg-red-950/90 border-2 border-red-500 px-3 py-1.5 rounded-xl shadow-[0_0_20px_rgba(239,68,68,0.5)] animate-pulse">
-        <div class="flex items-center gap-1.5 text-xs font-mono font-black text-yellow-300 mr-1">
-          <i class="fa-solid fa-triangle-exclamation text-red-400 animate-bounce"></i>
-          <span>EMER DESCENT</span>
-        </div>
-        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-600 text-white shadow-sm flex items-center gap-1">
-          <i class="fa-solid fa-person-seat text-[9px]"></i> BELT ON
-        </span>
-        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-600 text-white shadow-sm flex items-center gap-1">
-          <i class="fa-solid fa-ban-smoking text-[9px]"></i> NO SMOKE ON
-        </span>
-        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-600 text-white shadow-sm flex items-center gap-1">
-          <i class="fa-solid fa-person-running text-[9px]"></i> EXIT ON
-        </span>
-        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400 line-through opacity-75">
-          RET TO SEAT OFF
-        </span>
-        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-black bg-yellow-400 text-black shadow-sm flex items-center gap-1">
-          <i class="fa-solid fa-lightbulb text-[9px]"></i> 100% BRT
-        </span>
-        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/60 border border-yellow-400/50 text-yellow-300 flex items-center gap-1">
-          <i class="fa-solid fa-bullhorn text-red-400 text-[9px] animate-pulse"></i> PRAM
-        </span>
-      </div>
-
-      <!-- Controls & Master Reset -->
-      <div class="flex items-center gap-2">
-        <div id="chimeBadge" class="hidden px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-300 font-mono text-xs font-bold flex items-center gap-1.5 animate-bounce">
-          <i class="fa-solid fa-bell text-xs animate-wiggle"></i>
-          <span id="chimeBadgeText">CHIME</span>
-        </div>
-
-        <button id="audioToggleBtn" onclick="toggleAudio()" class="p-2.5 rounded-xl border bg-emerald-950/40 border-emerald-700/60 text-emerald-300 transition-all" title="Bật/Tắt âm thanh">
-          <i id="audioIcon" class="fa-solid fa-volume-high text-xs"></i>
-        </button>
-
-        <button onclick="masterReset()" class="flex items-center gap-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-800/80 text-red-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95">
-          <i class="fa-solid fa-arrow-rotate-left text-xs"></i>
-          <span>Reset</span>
-        </button>
+  <!-- TOPBAR STICKY HUD: TÍCH HỢP TRỰC TIẾP AIP & ACP (FIGURE 5.5-2) THU NHỎ GHIM CỐ ĐỊNH -->
+  <header class="sticky top-0 z-40 w-full max-w-5xl bg-slate-900/95 backdrop-blur border-b border-slate-800 px-3 py-2 mb-3 rounded-b-xl shadow-2xl flex flex-wrap items-center justify-between gap-2.5">
+    
+    <div class="flex items-center gap-2">
+      <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+      <div>
+        <h1 class="text-xs sm:text-sm font-bold tracking-wider text-slate-100 flex items-center gap-1.5">
+          <span>A321 CIDS SIMULATOR</span>
+          <span class="text-[9px] bg-sky-900/80 text-sky-300 px-1.5 py-0.2 rounded font-mono">STM STD</span>
+        </h1>
+        <p class="text-[9px] text-slate-400">Airbus Safety Training Manual</p>
       </div>
     </div>
 
-    <!-- Fleet Model Tabs -->
-    <div class="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center gap-2">
-      <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1.5">
-        <i class="fa-solid fa-layer-group text-sky-400"></i> Dòng tàu bay:
-      </span>
-      <button id="tabA321" onclick="switchAircraft('A321')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-sky-600 text-white shadow-md">
-        Airbus A321
+    <!-- MÀN HÌNH AIP VÀ CỤM ACP 4 MÀU THU NHỎ TRÊN TOPBAR -->
+    <div class="flex items-center gap-2.5 bg-slate-950/90 px-2.5 py-1.5 rounded-lg border border-slate-800 shadow-inner">
+      
+      <!-- CỤM ACP 4 MÀU FIGURE 5.5-2: AMBER | GREEN | RED | BLUE -->
+      <div class="flex items-center gap-1">
+        <span class="text-[9px] text-slate-500 font-mono font-bold mr-0.5">ACP:</span>
+        <div id="topAcpAmber" class="w-5 h-3.5 rounded-sm bg-amber-500/20 border border-amber-600/30 transition-all" title="Amber (Lavatory / Smoke)"></div>
+        <div id="topAcpGreen" class="w-5 h-3.5 rounded-sm bg-emerald-500/20 border border-emerald-600/30 transition-all" title="Green (Interphone)"></div>
+        <div id="topAcpRed"   class="w-5 h-3.5 rounded-sm bg-red-500/20 border border-red-600/30 transition-all" title="Red (Emergency / Evac)"></div>
+        <div id="topAcpBlue"  class="w-5 h-3.5 rounded-sm bg-sky-500/20 border border-sky-600/30 transition-all" title="Blue (Pax Seat Call)"></div>
+      </div>
+
+      <div class="h-5 w-px bg-slate-800"></div>
+
+      <!-- MÀN HÌNH AIP MINI: RED LED + 2 DÒNG CHỮ + GREEN LED -->
+      <div class="flex items-center gap-1.5">
+        <div id="topAipRedLed" class="w-2.5 h-2.5 rounded-full bg-red-950 border border-red-800 transition-all" title="AIP Red Flashing LED"></div>
+        <div class="flex flex-col justify-center text-left max-w-[170px] sm:max-w-[210px] truncate">
+          <div id="topAipLine1" class="font-mono text-[11px] font-bold text-emerald-400 leading-tight truncate">SYSTEM READY</div>
+          <div id="topAipLine2" class="font-mono text-[8px] text-emerald-600 leading-none truncate">CABIN NORMAL</div>
+        </div>
+        <div id="topAipGreenLed" class="w-2.5 h-2.5 rounded-full bg-emerald-950 border border-emerald-800 transition-all" title="AIP Green LED"></div>
+      </div>
+    </div>
+
+    <!-- NÚT MỞ LẠI POPUP DẤU HIỆU & NÚT RESET TỔNG -->
+    <div class="flex items-center gap-1.5">
+      <button id="btnViewSigns" onclick="openEmergencyPopup()" class="hidden bg-amber-600/90 hover:bg-amber-500 text-black text-[10px] font-bold px-2 py-1.5 rounded border border-amber-400 shadow animate-pulse">
+        <i class="fa-solid fa-triangle-exclamation mr-1"></i> XEM DẤU HIỆU
       </button>
-      <button id="tabA320" onclick="switchAircraft('A320')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
-        Airbus A320
-      </button>
-      <button id="tabA350" onclick="switchAircraft('A350')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
-        Airbus A350
-      </button>
-      <button id="tabB787" onclick="switchAircraft('B787')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
-        Boeing B787
+      <button onclick="systemReset()" class="bg-red-600 hover:bg-red-500 text-white text-[11px] font-bold px-3 py-1.5 rounded border border-red-400 shadow active:translate-y-0.5">
+        <i class="fa-solid fa-rotate-left mr-1"></i> RESET CIDS
       </button>
     </div>
   </header>
 
-  <!-- OXYGEN MASKS DROP BANNER -->
-  <div id="maskBanner" class="hidden max-w-7xl mx-auto w-full mb-3 bg-gradient-to-r from-red-950 via-red-900 to-red-950 border-2 border-red-500 text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between animate-pulse">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white text-lg">
-        <i class="fa-solid fa-mask-ventilator"></i>
-      </div>
-      <div>
-        <h4 class="font-black text-sm uppercase tracking-wider text-yellow-300">EMERGENCY DESCENT - OXYGEN MASKS DEPLOYED</h4>
-        <p class="text-xs text-red-200">Mặt nạ dưỡng khí tự động rơi toàn khoang. Tiếp viên kéo mặt nạ gần nhất & ổn định tại chỗ.</p>
-      </div>
+  <!-- THANH ĐẾM LÙI CHU KỲ BÁO KHÓI 30S -->
+  <div id="smokeCountdownBanner" class="hidden w-full max-w-5xl mb-2.5 bg-amber-950/70 border border-amber-600 text-amber-300 text-xs px-3 py-1.5 rounded-lg flex items-center justify-between font-mono shadow-lg">
+    <div class="flex items-center gap-2">
+      <i class="fa-solid fa-volume-high animate-pulse text-amber-400"></i>
+      <span>TRIPLE THREE LOW CHIMES: CHU KỲ PHÁT LẠI TRONG <b id="countdownSec" class="text-white text-sm">30</b>S</span>
     </div>
-    <span class="text-xs font-mono bg-black/60 px-3 py-1 rounded-lg border border-red-400 font-bold">DESCENT: 5000+ FPM</span>
+    <button onclick="resetSmokeAlert()" class="bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded shadow">
+      SMOKE RESET
+    </button>
   </div>
 
-  <!-- CABIN AMBIENT LIGHTING & OVERHEAD SIGNS STATUS BAR -->
-  <div id="cabinEnvBanner" class="max-w-7xl mx-auto w-full mb-4 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 transition-all duration-500">
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-lightbulb text-slate-400 text-xs"></i>
-        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Cabin Lighting:</span>
-      </div>
-      <div id="cabinLightBadge" class="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-700/50 flex items-center gap-1.5 transition-all">
-        <span id="cabinLightDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-        <span id="cabinLightText">DIMMED (CRUISE)</span>
-      </div>
-    </div>
+  <!-- NỘI DUNG CHÍNH: 2 CỘT -->
+  <main class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-3.5 pb-12">
 
-    <!-- PRAM Broadcast Status -->
-    <div id="pramStatusBox" class="hidden items-center gap-2 bg-red-950/80 border border-red-500/60 px-3 py-1 rounded-lg">
-      <i class="fa-solid fa-bullhorn text-red-400 text-xs animate-bounce"></i>
-      <span class="text-[11px] font-mono text-red-200 font-bold">PRAM BROADCAST:</span>
-      <span class="text-[11px] text-yellow-300 italic font-mono">"Cockpit speaking, emergency descent, fasten your seat belt..."</span>
-    </div>
+    <!-- CỘT TRÁI (MD: 4 CỘT): PANEL FAP, AAP, HANDSET, KHẨN NGUY -->
+    <div class="md:col-span-4 flex flex-col gap-3">
 
-    <!-- Overhead Signs Status -->
-    <div class="flex items-center gap-2 flex-wrap">
-      <div id="seatbeltSignBox" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-500 text-[10px] font-mono font-bold transition-all">
-        <i class="fa-solid fa-person-seat text-xs"></i>
-        <span>FASTEN SEATBELT</span>
-      </div>
-      <div id="noSmokingSignBox" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-500 text-[10px] font-mono font-bold transition-all">
-        <i class="fa-solid fa-ban-smoking text-xs"></i>
-        <span>NO SMOKING</span>
-      </div>
-      <div id="exitSignBox" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-500 text-[10px] font-mono font-bold transition-all">
-        <i class="fa-solid fa-person-running text-xs"></i>
-        <span>EXIT SIGNS</span>
-      </div>
-      <div id="returnToSeatBox" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-500 text-[10px] font-mono font-bold transition-all">
-        <i class="fa-solid fa-arrow-left text-xs"></i>
-        <span>RETURN TO SEAT (LAV)</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN INTERACTIVE CABIN GRID -->
-  <main class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-5 mb-4">
-    
-    <!-- LEFT COLUMN: CEILING HARDWARE & INTERPHONE HANDSET (7 COLS) -->
-    <div class="lg:col-span-7 flex flex-col gap-5">
-      
-      <!-- MODULE 1: AREA CALL PANEL (ACP) & ATTENDANT INDICATION PANEL (AIP) -->
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-            <h2 id="module1Title" class="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-200">
-              Module 1: Area Call Panel (ACP) & Attendant Indication Panel (AIP)
-            </h2>
-          </div>
-          <span id="module1Location" class="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-            A321 CABIN ROOF STATION
+      <!-- FAP: SMOKE DETECTION & EVACUATION -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-desktop text-sky-400"></i> Flight Attendant Panel
           </span>
+          <div id="fapCautionLight" class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-700 border border-amber-900">
+            CAUTION
+          </div>
         </div>
 
-        <div class="bg-gradient-to-b from-[#242c38] to-[#171f2a] p-5 rounded-2xl border border-slate-700 shadow-inner">
-          
-          <!-- Primary Alphanumeric Display Screen -->
-          <div class="relative max-w-lg mx-auto mb-5 rounded-xl border-4 border-slate-800 p-3 bg-black shadow-2xl">
-            <div id="screenHousing" class="lcd-screen-phosphor relative rounded-lg p-3.5 text-center overflow-hidden border border-emerald-900/60 min-h-[85px] flex flex-col justify-center">
-              <div id="aipLine1" class="font-lcd text-lg md:text-xl font-bold tracking-widest text-[#39ff14] drop-shadow-[0_0_8px_rgba(57,255,20,0.8)] min-h-[26px]">
-                READY / NORMAL
-              </div>
-              <div id="aipLine2" class="font-lcd text-xs md:text-sm font-semibold tracking-wider text-[#2ecc2e] drop-shadow-[0_0_5px_rgba(46,204,46,0.6)] min-h-[20px] mt-0.5">
-                AIRBUS A321 CIDS ONLINE
-              </div>
-            </div>
-
-            <div class="flex justify-between items-center text-[9px] text-slate-500 font-mono mt-2 px-1">
-              <span id="displaySubLabel">AIP DOOR 1L/4L</span>
-              <span class="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> ONLINE
-              </span>
-            </div>
+        <!-- Màn hình cảm biến WC trên FAP -->
+        <div class="bg-slate-950 border border-slate-800 rounded-lg p-2 mb-2">
+          <div class="flex justify-between text-[10px] font-mono text-slate-400 mb-1 border-b border-slate-800 pb-1">
+            <span>SMOKE SENSORS</span>
+            <span id="fapSmokeLabel" class="text-emerald-400 font-bold">NORMAL</span>
           </div>
-
-          <!-- SMOKE ALERT 30S COUNTDOWN HUD -->
-          <div id="smokeCountdownHud" class="hidden max-w-lg mx-auto mb-5 bg-amber-950/80 border-2 border-amber-500/80 rounded-xl p-3 shadow-xl">
-            <div class="flex items-center justify-between text-xs font-mono font-bold text-amber-300 mb-1.5">
-              <span class="flex items-center gap-2">
-                <i class="fa-solid fa-triangle-exclamation text-amber-400 animate-bounce"></i>
-                <span id="smokeTitleText">LAVATORY SMOKE ALERT (3x3 LOW CHIMES)</span>
-              </span>
-              <span class="bg-black/60 px-2 py-0.5 rounded text-white border border-amber-500/40">
-                LẶP LẠI: <b id="smokeCountVal" class="text-amber-400 text-sm">30</b>s
-              </span>
-            </div>
-            <div class="w-full bg-black/60 rounded-full h-2 overflow-hidden border border-amber-900/60">
-              <div id="smokeProgress" class="bg-amber-400 h-full w-full transition-all duration-1000 ease-linear"></div>
-            </div>
-            <p id="smokeSubText" class="text-[10px] text-amber-200/80 mt-1.5 italic text-center">
-              Phát chuỗi 3 đợt x 3 tiếng chuông trầm liên tục mỗi chu kỳ 30 giây cho đến khi bấm RESET.
-            </p>
+          <div class="grid grid-cols-4 gap-1 text-center font-mono text-[9px] py-1">
+            <div id="fapSensA" class="bg-slate-700/60 py-1 rounded border border-slate-600 text-slate-300">LAV A</div>
+            <div id="fapSensD" class="bg-slate-700/60 py-1 rounded border border-slate-600 text-slate-300">LAV D</div>
+            <div id="fapSensE" class="bg-slate-700/60 py-1 rounded border border-slate-600 text-slate-300">LAV E</div>
+            <div id="fapSensF" class="bg-slate-700/60 py-1 rounded border border-slate-600 text-slate-300">LAV F</div>
           </div>
-
-          <!-- DYNAMIC CEILING LIGHT BAR (ACP / MASTER CALL LIGHT) -->
-          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 max-w-lg mx-auto shadow-2xl">
-            <div id="acpBarLabel" class="text-[10px] font-mono text-center text-slate-400 uppercase font-bold tracking-widest mb-3">
-              Area Call Panel (ACP) 4-Bar Overhead Lights
-            </div>
-
-            <div id="acpLightGrid" class="grid grid-cols-4 gap-2.5 p-2 bg-[#0d131d] rounded-xl border border-slate-800">
-              <!-- Dynamically populated via JS -->
-            </div>
-
-            <div class="mt-3.5 pt-3 border-t border-slate-800 flex flex-wrap justify-center gap-2">
-              <button onclick="simulateCockpitCall()" class="px-2.5 py-1 text-[11px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-                ⚡ Buồng lái gọi vào cabin
-              </button>
-              <button onclick="triggerEmergencyCall()" class="px-2.5 py-1 text-[11px] rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-200 border border-red-700 transition">
-                ⚡ Flight Deck Emer Call
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- MODULE 2: CABIN INTERPHONE HANDSET -->
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            <h2 id="handsetTitle" class="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-200">
-              Module 2: Cabin Interphone Handset
-            </h2>
-          </div>
-          <span id="handsetStationLabel" class="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-            STATION FWD / AFT
-          </span>
         </div>
 
-        <div id="handsetShell" class="bg-[#e4dfd3] p-5 rounded-3xl border-4 border-[#b8b2a3] shadow-2xl text-slate-800 max-w-sm mx-auto transition-colors">
-          
-          <!-- Earpiece Slot -->
-          <div class="bg-[#bfb8a7] w-28 h-12 mx-auto rounded-2xl p-2 flex justify-center items-center gap-1.5 shadow-inner border border-[#9e9787]">
-            <div class="w-1.5 h-7 bg-[#6d6657] rounded-full"></div>
-            <div class="w-1.5 h-9 bg-[#6d6657] rounded-full"></div>
-            <div class="w-1.5 h-7 bg-[#6d6657] rounded-full"></div>
-            <div class="w-1.5 h-5 bg-[#6d6657] rounded-full"></div>
-          </div>
+        <!-- Cụm nút SMOKE RESET -->
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <button id="btnFapSmokeReset" onclick="resetSmokeAlert()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-[10px] font-bold py-1.5 rounded flex flex-col items-center">
+            <span>FAP SMOKE RESET</span>
+            <span class="text-[8px] font-normal text-slate-500">(SUBPANEL)</span>
+          </button>
+          <button id="btnAapSmokeReset" onclick="resetSmokeAlert()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-[10px] font-bold py-1.5 rounded flex flex-col items-center">
+            <span>AAP SMOKE RESET</span>
+            <span class="text-[8px] font-normal text-slate-500">(DOOR 4L)</span>
+          </button>
+        </div>
 
-          <!-- Handset Display Screen -->
-          <div class="mt-3.5 bg-[#40433e] p-2 rounded-xl border-2 border-[#2b2d2a] text-center shadow-inner">
-            <div class="text-[9px] font-mono text-slate-400 uppercase tracking-widest">DIALED SEQUENCE</div>
-            <div id="handsetDisplay" class="font-lcd text-amber-300 font-bold text-sm tracking-wider min-h-[20px]">
-              READY
-            </div>
+        <!-- Cụm nút EVACUATION CONTROLS -->
+        <div class="border-t border-slate-800 pt-2">
+          <div class="text-[10px] font-bold text-slate-400 mb-1 flex justify-between">
+            <span>EVACUATION CONTROLS</span>
+            <span id="evacStatusLabel" class="text-slate-500">OFF</span>
           </div>
-
-          <!-- Handset Keypad Grid -->
-          <div id="handsetKeypad" class="mt-4 grid grid-cols-3 gap-2.5">
-            <!-- Rendered dynamically -->
-          </div>
-
-          <!-- Push-To-Talk Bar -->
-          <div class="mt-4">
-            <button id="pttBtn" 
-              onmousedown="startPtt()" onmouseup="endPtt()"
-              ontouchstart="startPtt()" ontouchend="endPtt()"
-              class="btn-ptt w-full py-3 rounded-2xl font-black text-xs md:text-sm tracking-widest text-slate-100 uppercase transition-all">
-              PTT (PUSH TO TALK)
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnFapEvacCmd" onclick="toggleEvacAlert()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] font-bold py-1.5 rounded flex items-center justify-center gap-1">
+              <i class="fa-solid fa-bullhorn"></i> EVAC CMD
             </button>
-            <p class="text-[9px] text-center text-slate-500 font-medium mt-1">Giữ phím PTT để phát thanh trực tiếp sau khi chọn PA</p>
+            <button id="btnEvacReset" onclick="resetEvacAlert()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-[10px] font-bold py-1.5 rounded flex items-center justify-center gap-1">
+              <i class="fa-solid fa-bell-slash"></i> EVAC RESET
+            </button>
           </div>
-
-          <!-- Microphone Round Mesh -->
-          <div class="mt-3.5 w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-[#c9a635] via-[#94781d] to-[#635010] p-1 shadow-inner border border-[#4d3d09]">
-            <div class="w-full h-full rounded-full bg-[#1b1912]/40 bg-[radial-gradient(#111_1px,transparent_1px)] [background-size:3px_3px]"></div>
-          </div>
-
         </div>
-      </section>
+      </div>
+
+      <!-- CABIN HANDSET (INTERPHONE TAY CẦM) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg flex flex-col items-center">
+        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-phone"></i> Cabin Interphone Handset
+        </span>
+        <div class="grid grid-cols-2 gap-1.5 w-full max-w-[210px] mb-2">
+          <button onclick="handleHandset('PA')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-1.5 rounded border border-slate-700 text-xs">PA</button>
+          <button onclick="handleHandset('INTPH')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-1.5 rounded border border-slate-700 text-xs">INTPH</button>
+          <button onclick="handleHandset('FWD')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-1.5 rounded border border-slate-700 text-xs">1 / FWD</button>
+          <button onclick="handleHandset('MID')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-1.5 rounded border border-slate-700 text-xs">2 / MID</button>
+          <button onclick="handleHandset('EXIT')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-1.5 rounded border border-slate-700 text-xs">3 / EXIT</button>
+          <button onclick="handleHandset('AFT')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-1.5 rounded border border-slate-700 text-xs">4 / AFT</button>
+          <button onclick="handleHandset('ALL')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-1.5 rounded border border-slate-700 text-xs">ALL</button>
+          <button onclick="handleHandset('CAPT')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-1.5 rounded border border-slate-700 text-xs">CAPT</button>
+          <button onclick="handleHandset('EMER')" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 rounded border border-red-500 text-xs col-span-2 shadow">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i> EMER CALL
+          </button>
+        </div>
+        <button onmousedown="startPtt()" onmouseup="stopPtt()" class="w-full max-w-[210px] bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg border border-slate-600 text-xs tracking-wider shadow">
+          BẤM & GIỮ PTT (PA TALK)
+        </button>
+        <span class="text-[9px] text-slate-500 mt-1">PA ALL: Không có chime trên A320/A321</span>
+      </div>
+
+      <!-- KÍCH HOẠT KHẨN NGUY: EMERGENCY DESCENT -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg flex flex-col gap-2">
+        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation text-red-500"></i> Khẩn nguy buồng lái
+        </span>
+        <button onclick="triggerEmerDescent()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-2.5 px-3 rounded-lg border border-red-400 shadow active:translate-y-0.5 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-plane-arrival"></i> KÍCH HOẠT EMERGENCY DESCENT
+        </button>
+      </div>
 
     </div>
 
-    <!-- RIGHT COLUMN: CABIN TRIGGER HARDWARE & MAP (5 COLS) -->
-    <div class="lg:col-span-5 flex flex-col gap-5">
-
-      <!-- MODULE 3: CABIN TRIGGER UNITS -->
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-            <h2 class="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-200">
-              Module 3: Cabin & Lavatory Trigger Hardware
-            </h2>
-          </div>
-          <span class="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-            SIMULATED INPUTS
-          </span>
+    <!-- CỘT PHẢI (MD: 8 CỘT): LAYOUT THÂN TÀU DỌC TOÀN BỘ KHOANG KHÁCH A321 -->
+    <div class="md:col-span-8 bg-slate-900 border border-slate-800 rounded-xl p-3.5 shadow-lg flex flex-col">
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-800 mb-2.5">
+        <div>
+          <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Sơ đồ máy bay A321 (Vertical Layout)</span>
+          <p class="text-[10px] text-slate-400">Bấm ghế: Gọi tiếp viên (Vàng steady) • Bấm WC: Gọi hoặc Báo khói</p>
         </div>
+        <div class="flex items-center gap-2 text-[10px] font-mono">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-amber-600 rounded"></span> C-Class</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-sky-600 rounded"></span> Y-Class</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-slate-700 rounded border border-slate-500"></span> WC</span>
+        </div>
+      </div>
 
-        <div class="space-y-4">
+      <!-- KHUNG THÂN MÁY BAY HÌNH DỌC (CUỘN MƯỢT) -->
+      <div class="relative bg-slate-950 border-2 border-slate-700 rounded-3xl p-3 sm:p-4 flex flex-col items-center max-h-[680px] overflow-y-auto">
+        
+        <!-- NOSE / GALLEY 1 / DOOR 1L & 1R / LAV A -->
+        <div class="w-full max-w-md border-b-2 border-dashed border-slate-800 pb-2.5 mb-2.5 flex flex-col items-center">
+          <div class="w-16 h-4 border-t-2 border-x-2 border-slate-600 rounded-t-full mb-1"></div>
+          <span class="text-[9px] text-slate-500 font-mono tracking-widest uppercase">▲ COCKPIT / DOOR 1L & 1R ▲</span>
           
-          <!-- UNIT A: PSU SEAT OVERHEAD -->
-          <div class="bg-gradient-to-b from-slate-200 to-slate-300 p-4 rounded-2xl border border-slate-400 shadow-md text-slate-800">
-            <div class="flex justify-between items-center mb-3">
-              <span id="psuLabel" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">PSU OVERHEAD ROW 12C</span>
-              <div id="psuBeltMiniSign" class="bg-slate-800/90 px-2 py-0.5 rounded text-[9px] font-mono text-slate-400 font-bold border border-slate-700 flex items-center gap-1.5 transition-all">
-                <i class="fa-solid fa-person-seat text-[10px]"></i>
-                <span id="psuBeltMiniText">SIGNS OFF</span>
-              </div>
+          <div class="w-full grid grid-cols-2 gap-2 mt-1.5">
+            <div class="bg-slate-800/80 border border-slate-700 rounded p-1 text-center text-[10px] text-slate-400 font-mono">
+              <i class="fa-solid fa-utensils"></i> GALLEY 1 (DOOR 1L)
             </div>
-
-            <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl border border-slate-300">
-              <div class="flex items-center gap-3">
-                <button id="readingLightBtn" onclick="toggleReadingLight()" class="w-10 h-10 rounded-full bg-slate-300 border-2 border-slate-400 flex items-center justify-center transition-all" title="Bật/Tắt đèn đọc sách">
-                  <i id="readingLightIcon" class="fa-solid fa-lightbulb text-slate-500"></i>
-                </button>
-                <div>
-                  <div id="seatNameLabel" class="text-xs font-bold text-slate-800">Ghế hành khách 12C</div>
-                  <div class="text-[10px] text-slate-500">Passenger Call Attendant</div>
-                </div>
+            <!-- LAV A: MẶC ĐỊNH MÀU XÁM -->
+            <div id="lavBoxA" onclick="openLavModal('A')" class="bg-slate-700/80 hover:bg-slate-600 border border-slate-500 rounded p-1 flex items-center justify-between cursor-pointer transition-all">
+              <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-restroom text-slate-300 text-xs"></i>
+                <span class="text-[10px] font-bold text-slate-200">LAV A</span>
               </div>
-
-              <button id="psuCallBtn" onclick="togglePaxCall()" class="w-12 h-12 rounded-full bg-slate-200 border-2 border-slate-400 flex items-center justify-center transition-all shadow-md active:scale-95" title="Nhấn để gọi phục vụ">
-                <i id="psuCallIcon" class="fa-solid fa-person-breastfeeding text-slate-600 text-lg"></i>
-              </button>
+              <span id="lavStatusA" class="text-[8px] text-slate-400 font-mono">NORMAL</span>
             </div>
           </div>
-
-          <!-- UNIT B: LAVATORY INTERIOR PANEL -->
-          <div class="bg-[#eae7dc] p-4 rounded-2xl border border-[#b8b3a5] shadow-md text-slate-800">
-            <div class="flex justify-between items-center mb-3">
-              <span id="lavLabel" class="text-[10px] font-bold uppercase tracking-wider text-slate-600">LAVATORY E INTERIOR UNIT</span>
-              <div id="lavStatusPill" class="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
-                NORMAL
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between bg-white/90 p-3 rounded-xl border border-slate-300">
-              <div>
-                <div class="text-xs font-bold text-slate-800">Trợ giúp từ Nhà vệ sinh (LAV)</div>
-                <div class="text-[10px] text-slate-500">Nhấn nút để gọi tiếp viên hỗ trợ</div>
-              </div>
-
-              <button id="lavCallBtn" onclick="toggleLavCall()" class="w-12 h-12 rounded-2xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center transition-all shadow-md active:scale-95" title="Gọi hỗ trợ từ WC">
-                <i id="lavCallIcon" class="fa-solid fa-bell text-amber-700 text-lg"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- UNIT C: EMERGENCY SCENARIO TRIGGERS -->
-          <div class="bg-slate-950 p-4 rounded-2xl border border-red-900/60 shadow-xl space-y-3">
-            <div class="text-[10px] font-mono uppercase tracking-wider text-red-400 font-bold flex items-center gap-1.5">
-              <i class="fa-solid fa-triangle-exclamation"></i>
-              CÁC TÌNH HUỐNG KHẨN NGUY ĐẶC BIỆT (EMERGENCY TRIGGERS)
-            </div>
-
-            <!-- Smoke Alarm -->
-            <div class="bg-red-950/30 border border-red-800/60 p-3 rounded-xl flex items-center justify-between gap-3">
-              <div>
-                <div class="text-xs font-bold text-red-300 flex items-center gap-1.5">
-                  <i class="fa-solid fa-fire-smoke"></i> Báo khói nhà vệ sinh (LAV SMOKE)
-                </div>
-                <div id="smokeDesc" class="text-[10px] text-slate-400">Đèn Amber chớp + 3x3 low chimes chu kỳ 30s</div>
-              </div>
-              <button onclick="triggerLavSmoke()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-black font-extrabold text-xs rounded-xl shadow-lg transition active:scale-95 shrink-0">
-                BÁO KHÓI
-              </button>
-            </div>
-
-            <!-- Emergency Descent -->
-            <div class="bg-red-950/30 border border-red-800/60 p-3 rounded-xl flex items-center justify-between gap-3">
-              <div>
-                <div class="text-xs font-bold text-red-300 flex items-center gap-1.5">
-                  <i class="fa-solid fa-plane-slash"></i> Hạ độ cao khẩn cấp (EMER DESCENT)
-                </div>
-                <div class="text-[10px] text-slate-400">Mất áp suất khoang khách + Triple Chime + Rơi mặt nạ</div>
-              </div>
-              <button onclick="triggerEmerDescent()" class="px-3 py-2 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs rounded-xl shadow-lg transition active:scale-95 shrink-0">
-                DESCENT
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- MODULE 4: 2D FUSELAGE CABIN MAP -->
-      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-map-location-dot text-sky-400"></i>
-            <h2 id="mapTitle" class="text-xs font-bold uppercase tracking-wider text-slate-200">
-              Sơ đồ Mặt cắt 2D Khoang Khách Airbus A321
-            </h2>
-          </div>
-          <span id="mapConfigLabel" class="text-[9px] font-mono text-slate-400">SINGLE AISLE</span>
         </div>
 
-        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-          <div class="flex justify-between text-[9px] font-mono text-slate-500 mb-1.5">
-            <span>◄ FWD (Mũi)</span>
-            <span>MID (Khu cánh)</span>
-            <span>AFT (Đuôi) ►</span>
+        <!-- ZONE 1: BUSINESS CLASS (HÀNG 01 - 02) -->
+        <div class="w-full max-w-md mb-3 bg-slate-900/60 border border-amber-900/40 rounded-xl p-2">
+          <div class="text-[9px] font-bold text-amber-500 mb-1.5 font-mono flex justify-between">
+            <span>BUSINESS CLASS (2 - 2)</span>
+            <span>ROWS 01 - 02</span>
+          </div>
+          <div id="businessCabinRows" class="flex flex-col gap-1.5"></div>
+        </div>
+
+        <!-- CỬA THOÁT HIỂM 2 (EXIT 2) -->
+        <div class="w-full max-w-md flex items-center justify-between text-red-500 text-[10px] font-bold py-1 border-y border-red-900/50 my-1.5 px-2 bg-red-950/20">
+          <span>◀ EXIT 2L</span>
+          <span class="text-slate-500 font-mono text-[8px]">OVERWING / EMERGENCY EXIT</span>
+          <span>EXIT 2R ▶</span>
+        </div>
+
+        <!-- ZONE 2: ECONOMY CABIN (HÀNG 10 - 31) -->
+        <div class="w-full max-w-md mb-3 bg-slate-900/60 border border-slate-800 rounded-xl p-2">
+          <div class="text-[9px] font-bold text-sky-400 mb-1.5 font-mono flex justify-between">
+            <span>ECONOMY CABIN (3 - 3)</span>
+            <span>ROWS 10 - 31</span>
+          </div>
+          <div id="economyCabinRows1" class="flex flex-col gap-1"></div>
+        </div>
+
+        <!-- CỬA THOÁT HIỂM 3 (EXIT 3) -->
+        <div class="w-full max-w-md flex items-center justify-between text-red-500 text-[10px] font-bold py-1 border-y border-red-900/50 my-1.5 px-2 bg-red-950/20">
+          <span>◀ EXIT 3L</span>
+          <span class="text-slate-500 font-mono text-[8px]">OVERWING / EMERGENCY EXIT</span>
+          <span>EXIT 3R ▶</span>
+        </div>
+
+        <!-- ZONE 3: AFT CABIN (HÀNG 32 - 44) -->
+        <div class="w-full max-w-md mb-3 bg-slate-900/60 border border-slate-800 rounded-xl p-2">
+          <div class="text-[9px] font-bold text-sky-400 mb-1.5 font-mono flex justify-between">
+            <span>AFT CABIN (3 - 3)</span>
+            <span>ROWS 32 - 44</span>
+          </div>
+          <div id="economyCabinRows2" class="flex flex-col gap-1"></div>
+        </div>
+
+        <!-- TAIL / GALLEY 4 / DOOR 4L & 4R / 3 WC SAU (LAV D, E, F) -->
+        <div class="w-full max-w-md border-t-2 border-dashed border-slate-800 pt-2.5 flex flex-col items-center">
+          <span class="text-[9px] text-slate-500 font-mono tracking-widest uppercase mb-1.5">▼ AFT CABIN / DOOR 4L & 4R ▼</span>
+          
+          <div class="w-full grid grid-cols-3 gap-2">
+            <!-- LAV D (Trái - Door 4L) -->
+            <div id="lavBoxD" onclick="openLavModal('D')" class="bg-slate-700/80 hover:bg-slate-600 border border-slate-500 rounded p-1 flex flex-col items-center cursor-pointer transition-all">
+              <i class="fa-solid fa-restroom text-slate-300 text-xs"></i>
+              <span class="text-[10px] font-bold text-slate-200 mt-0.5">LAV D</span>
+              <span id="lavStatusD" class="text-[8px] text-slate-400 font-mono">NORMAL</span>
+            </div>
+
+            <!-- LAV E (Phải - Door 4R) -->
+            <div id="lavBoxE" onclick="openLavModal('E')" class="bg-slate-700/80 hover:bg-slate-600 border border-slate-500 rounded p-1 flex flex-col items-center cursor-pointer transition-all">
+              <i class="fa-solid fa-restroom text-slate-300 text-xs"></i>
+              <span class="text-[10px] font-bold text-slate-200 mt-0.5">LAV E</span>
+              <span id="lavStatusE" class="text-[8px] text-slate-400 font-mono">NORMAL</span>
+            </div>
+
+            <!-- LAV F (Phải - Door 4R) -->
+            <div id="lavBoxF" onclick="openLavModal('F')" class="bg-slate-700/80 hover:bg-slate-600 border border-slate-500 rounded p-1 flex flex-col items-center cursor-pointer transition-all">
+              <i class="fa-solid fa-restroom text-slate-300 text-xs"></i>
+              <span class="text-[10px] font-bold text-slate-200 mt-0.5">LAV F</span>
+              <span id="lavStatusF" class="text-[8px] text-slate-400 font-mono">NORMAL</span>
+            </div>
           </div>
 
-          <div id="fuselageTube" class="w-full h-14 bg-slate-900 rounded-full border-2 border-slate-700 flex items-center justify-between px-3 relative overflow-hidden">
-            <!-- Dynamic map stations rendered via JS -->
-          </div>
-
-          <div id="colorLegend" class="mt-3 grid grid-cols-2 gap-2 text-[9px] text-slate-400 border-t border-slate-800/80 pt-2">
-            <!-- Populated dynamically -->
+          <div class="w-full bg-slate-800/80 border border-slate-700 rounded p-1 text-center text-[10px] text-slate-400 font-mono mt-1.5">
+            <i class="fa-solid fa-utensils"></i> AFT GALLEY 4 (DOOR 4L & 4R)
           </div>
         </div>
-      </section>
 
+      </div>
     </div>
 
   </main>
 
-  <!-- FOOTER FLEET SPEC REFERENCE -->
-  <footer class="max-w-7xl mx-auto w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-xs text-slate-400 flex flex-col md:flex-row items-center justify-between gap-3 shadow-xl">
-    <div class="flex items-center gap-2">
-      <i class="fa-solid fa-circle-info text-sky-400 shrink-0"></i>
-      <span id="footerInfoText">
-        <b>Airbus A321 CIDS Specification:</b> 4-Segment Area Call Panel (Amber - Red - Green - Blue). Âm thanh Triple three low chimes mỗi 30s khi có khói WC.
-      </span>
+  <!-- POPUP CẢNH BÁO CÁC DẤU HIỆU TÌNH HUỐNG KHẨN NGUY (EMERGENCY SIGNS POPUP) -->
+  <div id="emergencyPopupModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-slate-900 border-2 border-red-600 rounded-2xl p-4 sm:p-5 max-w-lg w-full shadow-2xl flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-red-900/60 pb-2.5">
+        <h3 class="text-sm sm:text-base font-bold text-red-400 flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-red-500 text-lg animate-pulse"></i>
+          <span id="popupEmerTitle">TÌNH HUỐNG KHẨN NGUY: EMERGENCY DESCENT</span>
+        </h3>
+        <button onclick="closeEmergencyPopup()" class="text-slate-400 hover:text-white text-base px-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div id="popupEmerContent" class="text-xs text-slate-300 space-y-2"></div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeEmergencyPopup()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-2 px-4 rounded-lg border border-slate-600 shadow">
+          ĐÃ HIỂU / ĐÓNG
+        </button>
+      </div>
     </div>
-    <div class="text-[11px] font-mono text-slate-500 shrink-0">
-      FLEET CABIN TRAINING SUITE &bull; AIRBUS & BOEING SIMULATOR
+  </div>
+
+  <!-- POPUP ĐIỀU KHIỂN NHÀ VỆ SINH (LAVATORY MODAL) -->
+  <div id="lavModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-slate-900 border-2 border-slate-700 rounded-2xl p-4 sm:p-5 max-w-sm w-full shadow-2xl flex flex-col gap-3">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 class="text-xs sm:text-sm font-bold text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-restroom text-amber-500"></i>
+          <span id="modalLavTitle">ĐIỀU KHIỂN NHÀ VỆ SINH</span>
+        </h3>
+        <button onclick="closeLavModal()" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <p class="text-[11px] text-slate-400">Chọn mô phỏng hành vi tín hiệu tại WC này theo Safety Training Manual:</p>
+
+      <div class="flex flex-col gap-2 pt-1">
+        <button onclick="submitLavRoutineCall()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-between shadow">
+          <span><i class="fa-solid fa-bell mr-1.5"></i> KHÁCH GỌI HỖ TRỢ</span>
+          <span class="text-[9px] bg-amber-800 px-1.5 py-0.5 rounded font-mono">STEADY AMBER</span>
+        </button>
+
+        <button onclick="submitLavSmokeAlert()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-between shadow">
+          <span><i class="fa-solid fa-fire mr-1.5"></i> BÁO KHÓI (SMOKE ALERT)</span>
+          <span class="text-[9px] bg-red-800 px-1.5 py-0.5 rounded font-mono">FLASH AMBER</span>
+        </button>
+
+        <button onclick="submitLavReset()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center border border-slate-700">
+          <i class="fa-solid fa-rotate-left mr-1.5"></i> TẮT TÍN HIỆU TẠI WC NÀY
+        </button>
+      </div>
     </div>
-  </footer>
+  </div>
 
   <script>
-    // ==========================================
-    // 1. Audio Synthesizer (Aircraft Chimes)
-    // ==========================================
-    class AircraftAudioEngine {
-      constructor() {
-        this.ctx = null;
-        this.enabled = true;
-      }
+    let audioCtx = null;
+    let smokeCycleTimer = null;
+    let countdownTimer = null;
+    let countdownVal = 30;
+    let evacOsc = null;
+    let evacGain = null;
+    let emerDescentInterval = null;
 
-      init() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
-        }
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-      }
-
-      playSingleChime(freq = 880) {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
-
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.35, now + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 1.2);
-
-        showChimeBadge('SINGLE CHIME');
-      }
-
-      playHiLoChime(highFreq = 800, lowFreq = 587.33) {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-
-        const osc1 = this.ctx.createOscillator();
-        const gain1 = this.ctx.createGain();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(highFreq, now);
-        gain1.gain.setValueAtTime(0, now);
-        gain1.gain.linearRampToValueAtTime(0.35, now + 0.02);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
-        osc1.connect(gain1);
-        gain1.connect(this.ctx.destination);
-        osc1.start(now);
-        osc1.stop(now + 0.55);
-
-        const osc2 = this.ctx.createOscillator();
-        const gain2 = this.ctx.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(lowFreq, now + 0.5);
-        gain2.gain.setValueAtTime(0, now + 0.5);
-        gain2.gain.linearRampToValueAtTime(0.35, now + 0.52);
-        gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.15);
-        osc2.connect(gain2);
-        gain2.connect(this.ctx.destination);
-        osc2.start(now + 0.5);
-        osc2.stop(now + 1.15);
-
-        showChimeBadge('HI-LO CHIME');
-      }
-
-      playTripleEmergencyChime() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-
-        [0, 0.28, 0.56].forEach(offset => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(880, now + offset);
-          gain.gain.setValueAtTime(0, now + offset);
-          gain.gain.linearRampToValueAtTime(0.3, now + offset + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.24);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + offset);
-          osc.stop(now + offset + 0.24);
-        });
-
-        showChimeBadge('TRIPLE EMERGENCY CHIME');
-      }
-
-      playTripleThreeLowChimes() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        const roundBases = [0, 1.8, 3.6];
-        const offsets = [0, 0.40, 0.80];
-
-        roundBases.forEach((roundBase) => {
-          offsets.forEach((chimeOffset) => {
-            const time = now + roundBase + chimeOffset;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(392, time);
-
-            gain.gain.setValueAtTime(0, time);
-            gain.gain.linearRampToValueAtTime(0.42, time + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.36);
-
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(time);
-            osc.stop(time + 0.36);
-          });
-        });
-
-        showChimeBadge('TRIPLE 3 LOW CHIMES (3x3)');
-      }
-
-      playBoeingSmokeAlarm() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        [0, 0.3, 0.6, 0.9].forEach(offset => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(1200, now + offset);
-          gain.gain.setValueAtTime(0, now + offset);
-          gain.gain.linearRampToValueAtTime(0.35, now + offset + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.22);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + offset);
-          osc.stop(now + offset + 0.22);
-        });
-        showChimeBadge('HIGH SMOKE HORN (B787)');
-      }
-
-      playKeyClick() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(480, now);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.04);
-      }
+    function getAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
     }
 
-    const audio = new AircraftAudioEngine();
+    window.addEventListener('pointerdown', () => { getAudio(); }, { once: true });
 
-    // ==========================================
-    // 2. Fleet Configurations & Specifications
-    // ==========================================
-    const FLEET_CONFIG = {
-      A321: {
-        name: 'AIRBUS A321-200',
-        systemName: 'CIDS (CABIN INTERCOMMUNICATION DATA SYSTEM)',
-        panelTitle: 'Module 1: Area Call Panel (ACP) & Attendant Indication Panel (AIP)',
-        displayType: 'phosphor',
-        displayLabel: 'AIP DOOR 1L/4L',
-        handsetTheme: 'beige',
-        handsetStation: 'STATION FWD / AFT (DOOR 1L/4L)',
-        smokeCycle: '3x3_low',
-        smokeDesc: 'Đèn Amber chớp + 3x3 low chimes chu kỳ 30s',
-        smokeSubText: 'Phát chuỗi 3 đợt x 3 tiếng chuông trầm liên tục mỗi chu kỳ 30 giây cho đến khi bấm RESET.',
-        mapConfig: 'SINGLE AISLE • 220 SEATS',
-        mapStations: [
-          { id: 'fwd', label: 'FWD', sub: '1L', type: 'stn' },
-          { id: 'seat', label: '12C', sub: 'Seat', type: 'seat' },
-          { id: 'exit', label: 'EXIT', sub: '2L/3L', type: 'stn' },
-          { id: 'lav', label: 'LAV E', sub: 'WC', type: 'lav' },
-          { id: 'aft', label: 'AFT', sub: '4L', type: 'stn' }
-        ],
-        acpLamps: [
-          { key: 'amber', label: 'AMBER', desc: 'WC / Khói WC', color: 'bg-amber-500', icon: 'fa-restroom' },
-          { key: 'red',   label: 'RED',   desc: 'Khẩn nguy / Emer', color: 'bg-red-600', icon: 'fa-triangle-exclamation' },
-          { key: 'green', label: 'GREEN', desc: 'Buồng lái / Intercom', color: 'bg-emerald-500', icon: 'fa-phone-volume' },
-          { key: 'blue',  label: 'BLUE',  desc: 'Khách gọi ghế', color: 'bg-sky-500', icon: 'fa-user' }
-        ],
-        footerText: '<b>Airbus A321 CIDS Specification:</b> 4-Segment Area Call Panel (Amber - Red - Green - Blue). Chuông 3x3 low chimes mỗi 30s khi có khói WC. Chọn PA/PA ALL KHÔNG phát chuông (Silent PA).'
-      },
-      A320: {
-        name: 'AIRBUS A320-200',
-        systemName: 'CIDS CLASSIC',
-        panelTitle: 'Module 1: Area Call Panel (ACP) & Attendant Indication Panel (AIP)',
-        displayType: 'phosphor',
-        displayLabel: 'AIP DOOR 1L/2L',
-        handsetTheme: 'beige',
-        handsetStation: 'STATION FWD (1L) / AFT (2L)',
-        smokeCycle: '3x3_low',
-        smokeDesc: 'Đèn Amber chớp + 3x3 low chimes chu kỳ 30s',
-        smokeSubText: 'Phát chuỗi 3 đợt x 3 tiếng chuông trầm liên tục mỗi chu kỳ 30 giây cho đến khi bấm RESET.',
-        mapConfig: 'SINGLE AISLE • 180 SEATS',
-        mapStations: [
-          { id: 'fwd', label: 'FWD', sub: '1L', type: 'stn' },
-          { id: 'seat', label: '8B', sub: 'Seat', type: 'seat' },
-          { id: 'exit', label: 'OWE', sub: 'Overwing', type: 'stn' },
-          { id: 'lav', label: 'LAV D', sub: 'WC', type: 'lav' },
-          { id: 'aft', label: 'AFT', sub: '2L', type: 'stn' }
-        ],
-        acpLamps: [
-          { key: 'amber', label: 'AMBER', desc: 'WC / Khói WC', color: 'bg-amber-500', icon: 'fa-restroom' },
-          { key: 'red',   label: 'RED',   desc: 'Khẩn nguy / Emer', color: 'bg-red-600', icon: 'fa-triangle-exclamation' },
-          { key: 'green', label: 'GREEN', desc: 'Buồng lái / Intercom', color: 'bg-emerald-500', icon: 'fa-phone-volume' },
-          { key: 'blue',  label: 'BLUE',  desc: 'Khách gọi ghế', color: 'bg-sky-500', icon: 'fa-user' }
-        ],
-        footerText: '<b>Airbus A320 CIDS Specification:</b> Cụm 4 đèn ACP tiêu chuẩn (Amber - Red - Green - Blue). Chọn PA/PA ALL KHÔNG phát chuông (Silent PA).'
-      },
-      A350: {
-        name: 'AIRBUS A350-900',
-        systemName: 'CNS (CABIN NETWORK SYSTEM) & SMART CIDS',
-        panelTitle: 'Module 1: Advanced Area Call Panel (ACP) & OLED AIP Touch',
-        displayType: 'oled',
-        displayLabel: 'OLED AIP STATION 1L / 4L',
-        handsetTheme: 'modern-grey',
-        handsetStation: 'ATTENDANT HANDSET STATION (A350)',
-        smokeCycle: '3x3_low',
-        smokeDesc: 'Đèn Amber chớp + 3x3 low chimes chu kỳ 30s',
-        smokeSubText: 'Cảnh báo khói CNS thông minh: Flashing Amber ACP kèm cảnh báo chi tiết trên màn hình cảm ứng FAP.',
-        mapConfig: 'WIDE BODY TWIN AISLE • 300+ SEATS',
-        mapStations: [
-          { id: 'fwd', label: 'DOOR 1', sub: 'FWD L/R', type: 'stn' },
-          { id: 'seat', label: '18G', sub: 'Twin Aisle', type: 'seat' },
-          { id: 'exit', label: 'DOOR 2/3', sub: 'MID L/R', type: 'stn' },
-          { id: 'lav', label: 'LAV U', sub: 'Mid Lav', type: 'lav' },
-          { id: 'aft', label: 'DOOR 4', sub: 'AFT Galley', type: 'stn' }
-        ],
-        acpLamps: [
-          { key: 'amber', label: 'AMBER', desc: 'Lavatory Call', color: 'bg-amber-500', icon: 'fa-restroom' },
-          { key: 'red',   label: 'RED',   desc: 'Emergency / Descent', color: 'bg-red-600', icon: 'fa-triangle-exclamation' },
-          { key: 'pink',  label: 'PINK',  desc: 'Crew Interphone / Capt', color: 'bg-pink-500', icon: 'fa-headset' },
-          { key: 'blue',  label: 'BLUE',  desc: 'Passenger Seat Call', color: 'bg-sky-500', icon: 'fa-user' }
-        ],
-        footerText: '<b>Airbus A350 Specification:</b> Đèn ACP hỗ trợ dải màu <b>PINK (Magenta)</b> cho Interphone / Captain Call, Amber cho WC, Red cho Emergency và Blue cho khách gọi.'
-      },
-      B787: {
-        name: 'BOEING 787 DREAMLINER',
-        systemName: 'CABIN SERVICES SYSTEM (CSS) & MASTER CALL LIGHT',
-        panelTitle: 'Module 1: Master Call Light (MCL) & Cabin Attendant Panel (CAP)',
-        displayType: 'oled',
-        displayLabel: 'CAP SCREEN 1L / 2L / 4L',
-        handsetTheme: 'boeing-slate',
-        handsetStation: 'BOEING CABIN HANDSET (DIAL CODE SYSTEM)',
-        smokeCycle: 'boeing_high',
-        smokeDesc: 'Đèn Amber chớp + Chuông cảnh báo cao âm lặp lại liên tục',
-        smokeSubText: 'Boeing 787 Smoke Horn: Đèn Amber trên Master Call Light nhấp nháy, màn hình CAP hiển thị popup SMOKE DETECTED.',
-        mapConfig: 'WIDE BODY TWIN AISLE • DREAMLINER',
-        mapStations: [
-          { id: 'fwd', label: 'DOOR 1', sub: '1L Master', type: 'stn' },
-          { id: 'seat', label: '24D', sub: 'Center Row', type: 'seat' },
-          { id: 'exit', label: 'DOOR 2/3', sub: 'Door 2L/R', type: 'stn' },
-          { id: 'lav', label: 'LAV F', sub: 'Lavatory', type: 'lav' },
-          { id: 'aft', label: 'DOOR 4', sub: '4L Station', type: 'stn' }
-        ],
-        acpLamps: [
-          { key: 'amber', label: 'AMBER', desc: 'Lavatory Call / Smoke', color: 'bg-amber-500', icon: 'fa-restroom' },
-          { key: 'red',   label: 'RED',   desc: 'Emergency / Evac', color: 'bg-red-600', icon: 'fa-triangle-exclamation' },
-          { key: 'pink',  label: 'PINK',  desc: 'Crew / Pilot Call', color: 'bg-pink-500', icon: 'fa-phone-volume' },
-          { key: 'blue',  label: 'BLUE',  desc: 'Passenger Seat Call', color: 'bg-sky-500', icon: 'fa-user' }
-        ],
-        footerText: '<b>Boeing 787 Specification:</b> Master Call Light gồm <b>Pink</b> (Pilot / Crew Intercom), <b>Amber</b> (Lavatory), <b>Red</b> (Emergency) và <b>Blue</b> (Seat Call).'
+    function playOneHiChime() {
+      try {
+        const ctx = getAudio();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = ctx.currentTime;
+        osc.frequency.setValueAtTime(880, t);
+        gain.gain.setValueAtTime(0.32, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.85);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.85);
+      } catch (e) { console.warn(e); }
+    }
+
+    function playLoTone(timeOffset = 0, duration = 0.45) {
+      try {
+        const ctx = getAudio();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = ctx.currentTime + timeOffset;
+        osc.frequency.setValueAtTime(392, t);
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + duration);
+      } catch (e) { console.warn(e); }
+    }
+
+    function playTripleThreeLowChimes() {
+      const burstDelay = 0.32;
+      const pauseBetweenRounds = 0.8;
+      const roundDuration = burstDelay * 2 + 0.45;
+
+      playLoTone(0, 0.45);
+      playLoTone(burstDelay, 0.45);
+      playLoTone(burstDelay * 2, 0.45);
+
+      const tRound2 = roundDuration + pauseBetweenRounds;
+      playLoTone(tRound2, 0.45);
+      playLoTone(tRound2 + burstDelay, 0.45);
+      playLoTone(tRound2 + burstDelay * 2, 0.45);
+
+      const tRound3 = tRound2 + roundDuration + pauseBetweenRounds;
+      playLoTone(tRound3, 0.45);
+      playLoTone(tRound3 + burstDelay, 0.45);
+      playLoTone(tRound3 + burstDelay * 2, 0.45);
+    }
+
+    function playOneHiLoSlow() {
+      try {
+        const ctx = getAudio();
+        const t = ctx.currentTime;
+        const oscHi = ctx.createOscillator();
+        const gainHi = ctx.createGain();
+        oscHi.frequency.setValueAtTime(800, t);
+        gainHi.gain.setValueAtTime(0.32, t);
+        gainHi.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+        oscHi.connect(gainHi);
+        gainHi.connect(ctx.destination);
+        oscHi.start(t);
+        oscHi.stop(t + 0.65);
+
+        setTimeout(() => {
+          const t2 = ctx.currentTime;
+          const oscLo = ctx.createOscillator();
+          const gainLo = ctx.createGain();
+          oscLo.frequency.setValueAtTime(587, t2);
+          gainLo.gain.setValueAtTime(0.32, t2);
+          gainLo.gain.exponentialRampToValueAtTime(0.001, t2 + 0.85);
+          oscLo.connect(gainLo);
+          gainLo.connect(ctx.destination);
+          oscLo.start(t2);
+          oscLo.stop(t2 + 0.85);
+        }, 420);
+      } catch (e) { console.warn(e); }
+    }
+
+    function playTripleHiLoSlow() {
+      playOneHiLoSlow();
+      setTimeout(playOneHiLoSlow, 950);
+      setTimeout(playOneHiLoSlow, 1900);
+    }
+
+    function startEvacHorn() {
+      if (evacOsc) return;
+      try {
+        const ctx = getAudio();
+        evacOsc = ctx.createOscillator();
+        evacGain = ctx.createGain();
+        evacOsc.type = 'sawtooth';
+        evacOsc.frequency.setValueAtTime(950, ctx.currentTime);
+        evacGain.gain.setValueAtTime(0.28, ctx.currentTime);
+        evacOsc.connect(evacGain);
+        evacGain.connect(ctx.destination);
+        evacOsc.start();
+      } catch (e) { console.warn(e); }
+    }
+
+    function stopEvacHorn() {
+      if (evacOsc) {
+        try { evacOsc.stop(); } catch(e) {}
+        evacOsc = null;
       }
-    };
-
-    let currentAircraft = 'A321';
+    }
 
     const state = {
-      paxCall: false,
-      readingLight: false,
-      lavCall: false,
-      lavSmoke: false,
+      activeCalls: new Set(),
+      lavRoutine: new Set(),
+      lavSmoke: new Set(),
+      interphone: null,
       emerDescent: false,
-      cockpitCall: false,
-      interphoneTarget: null,
-      handsetBuffer: [],
-      pttActive: false
+      evacAlert: false,
+      lastEmergencyType: null
     };
 
-    let smokeCountdownInterval = null;
-    let smokeSecondsLeft = 30;
-    let emerDescentChimeInterval = null;
+    const topAcpAmber = document.getElementById('topAcpAmber');
+    const topAcpGreen = document.getElementById('topAcpGreen');
+    const topAcpRed = document.getElementById('topAcpRed');
+    const topAcpBlue = document.getElementById('topAcpBlue');
 
-    // DOM Elements
-    const fleetBadge = document.getElementById('fleetBadge');
-    const fleetSubSys = document.getElementById('fleetSubSys');
-    const module1Title = document.getElementById('module1Title');
-    const module1Location = document.getElementById('module1Location');
-    const aipLine1 = document.getElementById('aipLine1');
-    const aipLine2 = document.getElementById('aipLine2');
-    const screenHousing = document.getElementById('screenHousing');
-    const displaySubLabel = document.getElementById('displaySubLabel');
-    const acpBarLabel = document.getElementById('acpBarLabel');
-    const acpLightGrid = document.getElementById('acpLightGrid');
-    const miniAcpContainer = document.getElementById('miniAcpContainer');
-    const miniAipText = document.getElementById('miniAipText');
-    const miniPanelLabel = document.getElementById('miniPanelLabel');
-    const chimeBadge = document.getElementById('chimeBadge');
-    const chimeBadgeText = document.getElementById('chimeBadgeText');
-    const maskBanner = document.getElementById('maskBanner');
+    const topAipRedLed = document.getElementById('topAipRedLed');
+    const topAipGreenLed = document.getElementById('topAipGreenLed');
+    const topAipLine1 = document.getElementById('topAipLine1');
+    const topAipLine2 = document.getElementById('topAipLine2');
+    const btnViewSigns = document.getElementById('btnViewSigns');
 
-    const cabinEnvBanner = document.getElementById('cabinEnvBanner');
-    const cabinLightBadge = document.getElementById('cabinLightBadge');
-    const cabinLightDot = document.getElementById('cabinLightDot');
-    const cabinLightText = document.getElementById('cabinLightText');
-    const pramStatusBox = document.getElementById('pramStatusBox');
-    const seatbeltSignBox = document.getElementById('seatbeltSignBox');
-    const noSmokingSignBox = document.getElementById('noSmokingSignBox');
-    const exitSignBox = document.getElementById('exitSignBox');
-    const returnToSeatBox = document.getElementById('returnToSeatBox');
-    const psuBeltMiniSign = document.getElementById('psuBeltMiniSign');
-    const psuBeltMiniText = document.getElementById('psuBeltMiniText');
+    const smokeCountdownBanner = document.getElementById('smokeCountdownBanner');
+    const countdownSecEl = document.getElementById('countdownSec');
 
-    const smokeCountdownHud = document.getElementById('smokeCountdownHud');
-    const smokeCountVal = document.getElementById('smokeCountVal');
-    const smokeProgress = document.getElementById('smokeProgress');
-    const smokeDesc = document.getElementById('smokeDesc');
-    const smokeSubText = document.getElementById('smokeSubText');
-    const smokeTitleText = document.getElementById('smokeTitleText');
+    const fapCautionLight = document.getElementById('fapCautionLight');
+    const fapSmokeLabel = document.getElementById('fapSmokeLabel');
+    const btnFapSmokeReset = document.getElementById('btnFapSmokeReset');
+    const btnAapSmokeReset = document.getElementById('btnAapSmokeReset');
+    const btnFapEvacCmd = document.getElementById('btnFapEvacCmd');
+    const btnEvacReset = document.getElementById('btnEvacReset');
+    const evacStatusLabel = document.getElementById('evacStatusLabel');
 
-    const handsetShell = document.getElementById('handsetShell');
-    const handsetTitle = document.getElementById('handsetTitle');
-    const handsetStationLabel = document.getElementById('handsetStationLabel');
-    const handsetDisplay = document.getElementById('handsetDisplay');
-    const handsetKeypad = document.getElementById('handsetKeypad');
-    const pttBtn = document.getElementById('pttBtn');
+    function updateSystemState() {
+      const hasSmoke = state.lavSmoke.size > 0;
+      const hasLavCall = state.lavRoutine.size > 0;
+      const hasSeatCall = state.activeCalls.size > 0;
+      const hasIntercom = state.interphone && state.interphone !== 'PA' && state.interphone !== 'EMER';
+      const hasEmerRed = state.emerDescent || state.evacAlert || (state.interphone === 'EMER');
 
-    const psuLabel = document.getElementById('psuLabel');
-    const seatNameLabel = document.getElementById('seatNameLabel');
-    const lavLabel = document.getElementById('lavLabel');
-    const lavStatusPill = document.getElementById('lavStatusPill');
-    const psuCallBtn = document.getElementById('psuCallBtn');
-    const psuCallIcon = document.getElementById('psuCallIcon');
-    const readingLightBtn = document.getElementById('readingLightBtn');
-    const readingLightIcon = document.getElementById('readingLightIcon');
-    const lavCallBtn = document.getElementById('lavCallBtn');
-    const lavCallIcon = document.getElementById('lavCallIcon');
-
-    const mapTitle = document.getElementById('mapTitle');
-    const mapConfigLabel = document.getElementById('mapConfigLabel');
-    const fuselageTube = document.getElementById('fuselageTube');
-    const colorLegend = document.getElementById('colorLegend');
-    const footerInfoText = document.getElementById('footerInfoText');
-
-    let chimeTimeout = null;
-    function showChimeBadge(text) {
-      if (chimeTimeout) clearTimeout(chimeTimeout);
-      chimeBadgeText.innerText = text;
-      chimeBadge.classList.remove('hidden');
-      chimeTimeout = setTimeout(() => {
-        chimeBadge.classList.add('hidden');
-      }, 2500);
-    }
-
-    function toggleAudio() {
-      audio.enabled = !audio.enabled;
-      const btn = document.getElementById('audioToggleBtn');
-      const icon = document.getElementById('audioIcon');
-      if (audio.enabled) {
-        btn.className = 'p-2.5 rounded-xl border bg-emerald-950/40 border-emerald-700/60 text-emerald-300 transition-all';
-        icon.className = 'fa-solid fa-volume-high text-xs';
+      if (hasSmoke) {
+        topAcpAmber.className = "w-5 h-3.5 rounded-sm lamp-amber-flash";
+      } else if (hasLavCall) {
+        topAcpAmber.className = "w-5 h-3.5 rounded-sm lamp-amber-steady";
       } else {
-        btn.className = 'p-2.5 rounded-xl border bg-slate-800 border-slate-700 text-slate-400 transition-all';
-        icon.className = 'fa-solid fa-volume-xmark text-xs';
-      }
-    }
-
-    function switchAircraft(modelKey) {
-      masterReset();
-      currentAircraft = modelKey;
-      const conf = FLEET_CONFIG[modelKey];
-
-      ['A321', 'A320', 'A350', 'B787'].forEach(key => {
-        const tab = document.getElementById(`tab${key}`);
-        if (key === modelKey) {
-          tab.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-sky-600 text-white shadow-md scale-105';
-        } else {
-          tab.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700';
-        }
-      });
-
-      fleetBadge.innerText = conf.name;
-      fleetSubSys.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ${conf.systemName}`;
-      module1Title.innerText = conf.panelTitle;
-      module1Location.innerText = `${conf.name} ROOF STATION`;
-      displaySubLabel.innerText = conf.displayLabel;
-      miniPanelLabel.innerText = modelKey === 'B787' ? 'CAP STATUS:' : 'AIP STATUS:';
-      smokeDesc.innerText = conf.smokeDesc;
-      smokeSubText.innerText = conf.smokeSubText;
-      smokeTitleText.innerText = modelKey === 'B787' ? 'LAVATORY SMOKE DETECTED (B787)' : 'LAVATORY SMOKE ALERT (3x3 LOW CHIMES)';
-      footerInfoText.innerHTML = conf.footerText;
-
-      if (conf.displayType === 'oled') {
-        screenHousing.className = 'lcd-screen-oled relative rounded-lg p-3.5 text-center overflow-hidden border border-sky-900/60 min-h-[85px] flex flex-col justify-center';
-        aipLine1.className = 'font-lcd text-lg md:text-xl font-bold tracking-widest text-[#38bdf8] drop-shadow-[0_0_8px_rgba(56,189,248,0.8)] min-h-[26px]';
-        aipLine2.className = 'font-lcd text-xs md:text-sm font-semibold tracking-wider text-[#7dd3fc] drop-shadow-[0_0_5px_rgba(125,211,252,0.6)] min-h-[20px] mt-0.5';
-      } else {
-        screenHousing.className = 'lcd-screen-phosphor relative rounded-lg p-3.5 text-center overflow-hidden border border-emerald-900/60 min-h-[85px] flex flex-col justify-center';
-        aipLine1.className = 'font-lcd text-lg md:text-xl font-bold tracking-widest text-[#39ff14] drop-shadow-[0_0_8px_rgba(57,255,20,0.8)] min-h-[26px]';
-        aipLine2.className = 'font-lcd text-xs md:text-sm font-semibold tracking-wider text-[#2ecc2e] drop-shadow-[0_0_5px_rgba(46,204,46,0.6)] min-h-[20px] mt-0.5';
+        topAcpAmber.className = "w-5 h-3.5 rounded-sm bg-amber-500/20 border border-amber-600/30";
       }
 
-      renderAcpBar(conf.acpLamps);
-      renderHandset(modelKey, conf);
-
-      psuLabel.innerText = `PSU OVERHEAD ${conf.mapStations.find(s => s.type === 'seat')?.label || 'ROW'}`;
-      seatNameLabel.innerText = `Ghế hành khách ${conf.mapStations.find(s => s.type === 'seat')?.label || 'SEAT'}`;
-      lavLabel.innerText = `${conf.mapStations.find(s => s.type === 'lav')?.label || 'LAV'} INTERIOR UNIT`;
-      mapTitle.innerText = `Sơ đồ Mặt cắt 2D Khoang Khách ${conf.name}`;
-      mapConfigLabel.innerText = conf.mapConfig;
-
-      renderFuselageMap(conf.mapStations);
-      renderColorLegend(conf.acpLamps);
-
-      updateCidsState();
-    }
-
-    function renderAcpBar(lamps) {
-      acpLightGrid.innerHTML = '';
-      miniAcpContainer.innerHTML = '';
-
-      lamps.forEach(lamp => {
-        const col = document.createElement('div');
-        col.className = 'flex flex-col items-center gap-1.5';
-        col.innerHTML = `
-          <div id="acpLamp_${lamp.key}" class="acp-lamp w-full h-10 md:h-12 rounded-lg ${lamp.color} border border-white/20 flex items-center justify-center">
-            <i class="fa-solid ${lamp.icon} text-xs text-black/50"></i>
-          </div>
-          <span class="text-[10px] font-bold text-slate-300 tracking-tight">${lamp.label}</span>
-          <span class="text-[8px] text-slate-400 text-center leading-tight">${lamp.desc}</span>
-        `;
-        acpLightGrid.appendChild(col);
-
-        const mini = document.createElement('div');
-        mini.id = `miniLamp_${lamp.key}`;
-        mini.className = `mini-acp-lamp ${lamp.color}`;
-        mini.title = `${lamp.label}: ${lamp.desc}`;
-        miniAcpContainer.appendChild(mini);
-      });
-    }
-
-    function renderHandset(modelKey, conf) {
-      handsetTitle.innerText = `Module 2: Cabin Interphone (${conf.name})`;
-      handsetStationLabel.innerText = conf.handsetStation;
-
-      if (modelKey === 'B787') {
-        handsetShell.className = 'bg-[#334155] p-5 rounded-3xl border-4 border-[#1e293b] shadow-2xl text-slate-100 max-w-sm mx-auto transition-colors';
-      } else if (modelKey === 'A350') {
-        handsetShell.className = 'bg-[#cbd5e1] p-5 rounded-3xl border-4 border-[#94a3b8] shadow-2xl text-slate-900 max-w-sm mx-auto transition-colors';
+      if (hasIntercom) {
+        topAcpGreen.className = "w-5 h-3.5 rounded-sm bg-emerald-500 shadow-[0_0_12px_#10b981]";
+        topAipGreenLed.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]";
       } else {
-        handsetShell.className = 'bg-[#e4dfd3] p-5 rounded-3xl border-4 border-[#b8b2a3] shadow-2xl text-slate-800 max-w-sm mx-auto transition-colors';
+        topAcpGreen.className = "w-5 h-3.5 rounded-sm bg-emerald-500/20 border border-emerald-600/30";
+        topAipGreenLed.className = "w-2.5 h-2.5 rounded-full bg-emerald-950 border border-emerald-800";
       }
 
-      handsetKeypad.innerHTML = '';
-
-      if (modelKey === 'B787') {
-        const boeingKeys = [
-          { text: 'PA', fn: "pressKey('PA')" },
-          { text: 'PILOT (31)', fn: "pressKey('PILOT')" },
-          { text: 'ALL ATTND (55)', fn: "pressKey('ALL')" },
-          { text: '1', fn: "pressKey('1')" },
-          { text: '2', fn: "pressKey('2')" },
-          { text: '3', fn: "pressKey('3')" },
-          { text: '4', fn: "pressKey('4')" },
-          { text: '5', fn: "pressKey('5')" },
-          { text: '6', fn: "pressKey('6')" },
-          { text: 'EMER (**)', fn: "pressKey('EMER')", isRed: true },
-          { text: 'CLR / RES', fn: "pressKey('RESET')", isRed: true },
-          { text: 'CALL CABIN', fn: "pressKey('CALL_CABIN')" }
-        ];
-
-        boeingKeys.forEach(k => {
-          const btn = document.createElement('button');
-          btn.setAttribute('onclick', k.fn);
-          btn.className = `${k.isRed ? 'btn-key-red' : 'btn-key-boeing'} py-2.5 rounded-xl text-xs font-bold font-mono`;
-          btn.innerText = k.text;
-          handsetKeypad.appendChild(btn);
-        });
+      if (hasEmerRed) {
+        topAcpRed.className = "w-5 h-3.5 rounded-sm lamp-red-flash";
       } else {
-        const airbusKeys = [
-          { text: 'PA', fn: "pressKey('PA')" },
-          { text: 'INTPH', fn: "pressKey('INTPH')" },
-          { empty: true },
-          { text: '1/FWD', fn: "pressKey('1/FWD')" },
-          { text: '2/MID', fn: "pressKey('2/MID')" },
-          { text: 'ALL', fn: "pressKey('ALL')" },
-          { text: '3/EXIT', fn: "pressKey('3/EXIT')" },
-          { text: '4/AFT', fn: "pressKey('4/AFT')" },
-          { empty: true },
-          { text: 'EMER CALL', fn: "pressKey('EMER')", isRed: true },
-          { text: 'CAPT', fn: "pressKey('CAPT')" },
-          { text: 'RESET', fn: "pressKey('RESET')", isRed: true }
-        ];
-
-        airbusKeys.forEach(k => {
-          if (k.empty) {
-            const div = document.createElement('div');
-            div.className = 'bg-black/10 rounded-xl border-b-2 border-black/20';
-            handsetKeypad.appendChild(div);
-          } else {
-            const btn = document.createElement('button');
-            btn.setAttribute('onclick', k.fn);
-            btn.className = `${k.isRed ? 'btn-key-red' : 'btn-key'} py-2.5 rounded-xl text-xs font-bold font-mono`;
-            btn.innerText = k.text;
-            handsetKeypad.appendChild(btn);
-          }
-        });
+        topAcpRed.className = "w-5 h-3.5 rounded-sm bg-red-500/20 border border-red-600/30";
       }
-    }
 
-    function renderFuselageMap(stations) {
-      fuselageTube.innerHTML = '';
-      stations.forEach(stn => {
-        const box = document.createElement('div');
-        box.className = 'flex flex-col items-center';
-        box.innerHTML = `
-          <div id="mapItem_${stn.id}" class="w-7 h-8 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-[8px] font-bold text-slate-300 transition-all">
-            ${stn.label}
-          </div>
-          <span class="text-[7px] text-slate-500 mt-0.5">${stn.sub}</span>
-        `;
-        fuselageTube.appendChild(box);
-      });
-    }
+      if (hasSeatCall) {
+        topAcpBlue.className = "w-5 h-3.5 rounded-sm bg-sky-500 shadow-[0_0_12px_#0284c7]";
+      } else {
+        topAcpBlue.className = "w-5 h-3.5 rounded-sm bg-sky-500/20 border border-sky-600/30";
+      }
 
-    function renderColorLegend(lamps) {
-      colorLegend.innerHTML = '';
-      lamps.forEach(lamp => {
-        const item = document.createElement('div');
-        item.className = 'flex items-center gap-1.5';
-        item.innerHTML = `
-          <span class="w-2.5 h-2.5 rounded-full ${lamp.color}"></span>
-          <span>${lamp.label}: ${lamp.desc}</span>
-        `;
-        colorLegend.appendChild(item);
-      });
-    }
+      if (state.evacAlert) {
+        topAipLine1.innerText = "EVACUATION ALERT";
+        topAipLine1.className = "font-mono text-[11px] font-bold text-red-500 leading-tight truncate aip-smoke-text";
+        topAipLine2.innerText = "EVACUATE PASSENGERS";
+        topAipLine2.className = "font-mono text-[8px] text-red-400 leading-none truncate";
+        topAipRedLed.className = "w-2.5 h-2.5 rounded-full led-red-flash border border-red-400";
+        btnViewSigns.classList.remove('hidden');
+        return;
+      }
 
-    function updateCidsState() {
-      const conf = FLEET_CONFIG[currentAircraft];
-
-      conf.acpLamps.forEach(lamp => {
-        const el = document.getElementById(`acpLamp_${lamp.key}`);
-        const miniEl = document.getElementById(`miniLamp_${lamp.key}`);
-        if (el) el.className = `acp-lamp w-full h-10 md:h-12 rounded-lg ${lamp.color} border border-white/20 flex items-center justify-center`;
-        if (miniEl) miniEl.className = `mini-acp-lamp ${lamp.color}`;
-      });
-
-      conf.mapStations.forEach(stn => {
-        const mapEl = document.getElementById(`mapItem_${stn.id}`);
-        if (mapEl) {
-          mapEl.className = 'w-7 h-8 rounded bg-slate-800 border border-slate-600 flex items-center justify-center text-[8px] font-bold text-slate-300 transition-all';
-        }
-      });
-
-      const mapSeat = document.getElementById('mapItem_seat');
-      const mapLav = document.getElementById('mapItem_lav');
-
-      const setLamp = (key, style) => {
-        const el = document.getElementById(`acpLamp_${key}`);
-        const miniEl = document.getElementById(`miniLamp_${key}`);
-        if (el) el.classList.add(style);
-        if (miniEl) miniEl.classList.add(style);
-      };
-
-      const isOled = conf.displayType === 'oled';
-      const normalColor = isOled ? 'text-[#38bdf8]' : 'text-[#39ff14]';
-
-      // 1. EMERGENCY DESCENT (TOP PRIORITY)
       if (state.emerDescent) {
-        setLamp('red', 'flash-red');
-        aipLine1.innerText = 'EMER DESCENT - OXY MASKS ON';
-        miniAipText.innerText = 'EMER DESCENT';
-        miniAipText.className = 'font-lcd text-xs font-bold tracking-wider text-red-500 animate-pulse truncate max-w-[160px]';
-        aipLine1.className = 'font-lcd text-lg md:text-xl font-bold tracking-widest text-red-500 animate-pulse';
-        aipLine2.innerText = 'PULL OXYGEN MASK IMMEDIATELY';
-        
-        maskBanner.classList.remove('hidden');
+        topAipLine1.innerText = "EMERGENCY DESCENT";
+        topAipLine1.className = "font-mono text-[11px] font-bold text-red-500 leading-tight truncate aip-smoke-text";
+        topAipLine2.innerText = "PA: CREW SEATED & FASTENED";
+        topAipLine2.className = "font-mono text-[8px] text-red-400 leading-none truncate";
+        topAipRedLed.className = "w-2.5 h-2.5 rounded-full led-red-flash border border-red-400";
+        btnViewSigns.classList.remove('hidden');
+        return;
+      }
 
-        const topbarStrip = document.getElementById('topbarEmerDescentStrip');
-        if (topbarStrip) {
-          topbarStrip.classList.remove('hidden');
-          topbarStrip.classList.add('flex');
+      if (state.interphone === 'EMER') {
+        topAipLine1.innerText = "*** EMER CALL ***";
+        topAipLine1.className = "font-mono text-[11px] font-bold text-red-500 leading-tight truncate";
+        topAipLine2.innerText = "COCKPIT CONFERENCING";
+        topAipLine2.className = "font-mono text-[8px] text-red-400 leading-none truncate";
+        topAipRedLed.className = "w-2.5 h-2.5 rounded-full led-red-flash border border-red-400";
+        btnViewSigns.classList.remove('hidden');
+        return;
+      }
+
+      if (hasSmoke) {
+        const firstSmoke = Array.from(state.lavSmoke)[0];
+        topAipLine1.innerText = `SMOKE LAV ${firstSmoke}`;
+        topAipLine1.className = "font-mono text-[11px] font-bold aip-smoke-text leading-tight truncate";
+        topAipLine2.innerText = "CHECK LAVATORY FIRE";
+        topAipLine2.className = "font-mono text-[8px] text-amber-400 leading-none truncate";
+        topAipRedLed.className = "w-2.5 h-2.5 rounded-full led-red-flash border border-red-400";
+        btnViewSigns.classList.remove('hidden');
+        return;
+      }
+
+      topAipRedLed.className = "w-2.5 h-2.5 rounded-full bg-red-950 border border-red-800";
+      btnViewSigns.classList.add('hidden');
+
+      if (state.interphone) {
+        if (state.interphone === 'PA') {
+          topAipLine1.innerText = "PA ALL: NO CHIME";
+          topAipLine1.className = "font-mono text-[11px] font-bold text-emerald-400 leading-tight truncate";
+          topAipLine2.innerText = "PRESS PTT TO SPEAK";
+          topAipLine2.className = "font-mono text-[8px] text-emerald-600 leading-none truncate";
+        } else {
+          topAipLine1.innerText = `CALL TO ${state.interphone}`;
+          topAipLine1.className = "font-mono text-[11px] font-bold text-emerald-400 leading-tight truncate";
+          topAipLine2.innerText = "INTERPHONE CONNECTED";
+          topAipLine2.className = "font-mono text-[8px] text-emerald-600 leading-none truncate";
         }
-
-        // 100% Bright Cabin Lighting
-        cabinEnvBanner.className = 'max-w-7xl mx-auto w-full mb-4 bg-white text-slate-900 border-2 border-yellow-400 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 transition-all duration-500 shadow-[0_0_35px_rgba(255,255,255,0.7)]';
-        cabinLightBadge.className = 'px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-yellow-400 text-black border border-yellow-600 flex items-center gap-1.5 shadow-md';
-        cabinLightDot.className = 'w-2 h-2 rounded-full bg-white animate-ping';
-        cabinLightText.innerText = '100% BRIGHT (MAX LIGHTING)';
-
-        // FASTEN SEATBELT & NO SMOKING ON
-        seatbeltSignBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-600 text-white text-[10px] font-mono font-bold shadow-[0_0_15px_#dc2626] animate-pulse';
-        noSmokingSignBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-600 text-white text-[10px] font-mono font-bold shadow-[0_0_15px_#dc2626] animate-pulse';
-
-        // EXIT SIGNS ON
-        if (exitSignBox) {
-          exitSignBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-600 text-white text-[10px] font-mono font-bold shadow-[0_0_15px_#059669] animate-pulse';
-        }
-
-        // RETURN TO SEAT OFF (Lavatory occupants use drop-down lav mask immediately)
-        if (returnToSeatBox) {
-          returnToSeatBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-600 text-[10px] font-mono line-through opacity-40';
-        }
-        
-        psuBeltMiniSign.className = 'bg-red-600 px-2 py-0.5 rounded text-[9px] font-mono text-white font-bold border border-red-400 flex items-center gap-1.5 shadow-[0_0_12px_#dc2626] animate-pulse';
-        psuBeltMiniText.innerText = 'FASTEN SEATBELT ON';
-
-        pramStatusBox.classList.remove('hidden');
-        pramStatusBox.classList.add('flex');
-        return;
-      } else {
-        maskBanner.classList.add('hidden');
-        pramStatusBox.classList.add('hidden');
-        pramStatusBox.classList.remove('flex');
-
-        const topbarStrip = document.getElementById('topbarEmerDescentStrip');
-        if (topbarStrip) {
-          topbarStrip.classList.add('hidden');
-          topbarStrip.classList.remove('flex');
-        }
-
-        cabinEnvBanner.className = 'max-w-7xl mx-auto w-full mb-4 bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 transition-all duration-500';
-        cabinLightBadge.className = 'px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-950/40 text-amber-300 border border-amber-700/50 flex items-center gap-1.5 transition-all';
-        cabinLightDot.className = 'w-2 h-2 rounded-full bg-amber-400';
-        cabinLightText.innerText = 'DIMMED (CRUISE)';
-
-        seatbeltSignBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-500 text-[10px] font-mono font-bold transition-all';
-        noSmokingSignBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-500 text-[10px] font-mono font-bold transition-all';
-        if (exitSignBox) {
-          exitSignBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-500 text-[10px] font-mono font-bold transition-all';
-        }
-        if (returnToSeatBox) {
-          returnToSeatBox.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800/80 border border-slate-700 text-slate-500 text-[10px] font-mono font-bold transition-all';
-        }
-
-        psuBeltMiniSign.className = 'bg-slate-800/90 px-2 py-0.5 rounded text-[9px] font-mono text-slate-400 font-bold border border-slate-700 flex items-center gap-1.5 transition-all';
-        psuBeltMiniText.innerText = 'SIGNS OFF';
-      }
-
-      // 2. LAVATORY SMOKE ALERT
-      if (state.lavSmoke) {
-        setLamp('amber', 'flash-amber');
-        const lavName = conf.mapStations.find(s => s.type === 'lav')?.label || 'LAV';
-        aipLine1.innerText = `${lavName} SMOKE DETECTED`;
-        miniAipText.innerText = 'SMOKE DETECTED';
-        miniAipText.className = 'font-lcd text-xs font-bold tracking-wider text-red-500 animate-pulse truncate max-w-[160px]';
-        aipLine1.className = 'font-lcd text-lg md:text-xl font-bold tracking-widest text-red-500 animate-pulse';
-        aipLine2.innerText = 'DON PBE / USE HALON EXTINGUISHER';
-        if (mapLav) {
-          mapLav.className = 'w-7 h-8 rounded bg-red-600 text-white border border-red-400 flex items-center justify-center text-[8px] font-bold animate-ping';
-        }
-        smokeCountdownHud.classList.remove('hidden');
-        return;
-      } else {
-        smokeCountdownHud.classList.add('hidden');
-      }
-
-      // 3. EMERGENCY INTERPHONE CALL
-      if (state.interphoneTarget === 'EMER') {
-        setLamp('red', 'flash-red');
-        aipLine1.innerText = '*** EMERGENCY CALL ***';
-        miniAipText.innerText = 'EMERGENCY CALL';
-        miniAipText.className = 'font-lcd text-xs font-bold tracking-wider text-red-500 animate-pulse truncate max-w-[160px]';
-        aipLine1.className = 'font-lcd text-lg md:text-xl font-bold tracking-widest text-red-500 animate-pulse';
-        aipLine2.innerText = currentAircraft === 'B787' ? 'FLIGHT DECK ACCESS PRIORITY' : 'FLIGHT DECK CONNECTED';
         return;
       }
 
-      // 4. PA IN USE (SILENT ON AIRBUS A320/A321)
-      if (state.interphoneTarget === 'PA') {
-        const text = state.pttActive ? 'DIRECT PA IN USE' : 'PRE ANNOUNCEMENT';
-        aipLine1.innerText = text;
-        miniAipText.innerText = text;
-        miniAipText.className = `font-lcd text-xs font-bold tracking-wider ${normalColor} truncate max-w-[160px]`;
-        aipLine1.className = `font-lcd text-lg md:text-xl font-bold tracking-widest ${normalColor}`;
-        aipLine2.innerText = 'ALL CABIN ZONES ACTIVE';
+      if (hasSeatCall) {
+        const latestSeat = Array.from(state.activeCalls)[state.activeCalls.size - 1];
+        topAipLine1.innerText = `CALL SEAT ${latestSeat}`;
+        topAipLine1.className = "font-mono text-[11px] font-bold text-sky-400 leading-tight truncate";
+        topAipLine2.innerText = `SEAT CALL (${state.activeCalls.size} ACTIVE)`;
+        topAipLine2.className = "font-mono text-[8px] text-sky-500 leading-none truncate";
         return;
       }
 
-      // 5. INTERCOM CALL
-      const intercomLampKey = (currentAircraft === 'A350' || currentAircraft === 'B787') ? 'pink' : 'green';
-      const intercomStyle = (currentAircraft === 'A350' || currentAircraft === 'B787') ? 'active-pink' : 'active-green';
-
-      if (state.cockpitCall || state.interphoneTarget === 'CAPT' || state.interphoneTarget === 'PILOT') {
-        setLamp(intercomLampKey, intercomStyle);
-        aipLine1.innerText = currentAircraft === 'B787' ? 'PILOT CALL (FLIGHT DECK)' : 'CALL TO COCKPIT';
-        miniAipText.innerText = 'COCKPIT CALL';
-        miniAipText.className = `font-lcd text-xs font-bold tracking-wider ${normalColor} truncate max-w-[160px]`;
-        aipLine1.className = `font-lcd text-lg md:text-xl font-bold tracking-widest ${normalColor}`;
-        aipLine2.innerText = 'CREW INTERPHONE CONNECTED';
+      if (hasLavCall) {
+        const firstRoutine = Array.from(state.lavRoutine)[0];
+        topAipLine1.innerText = `CALL LAV ${firstRoutine}`;
+        topAipLine1.className = "font-mono text-[11px] font-bold text-amber-400 leading-tight truncate";
+        topAipLine2.innerText = "LAVATORY ASSISTANCE";
+        topAipLine2.className = "font-mono text-[8px] text-amber-500 leading-none truncate";
         return;
       }
 
-      if (state.interphoneTarget) {
-        setLamp(intercomLampKey, intercomStyle);
-        aipLine1.innerText = `CALL ${state.interphoneTarget}`;
-        miniAipText.innerText = `CALL ${state.interphoneTarget}`;
-        miniAipText.className = `font-lcd text-xs font-bold tracking-wider ${normalColor} truncate max-w-[160px]`;
-        aipLine1.className = `font-lcd text-lg md:text-xl font-bold tracking-widest ${normalColor}`;
-        aipLine2.innerText = 'STATION-TO-STATION ACTIVE';
-        return;
-      }
-
-      // 6. LAVATORY & PAX CALL COMBO
-      if (state.lavCall && state.paxCall) {
-        setLamp('amber', 'active-amber');
-        setLamp('blue', 'active-blue');
-        const seatName = conf.mapStations.find(s => s.type === 'seat')?.label || '12C';
-        const lavName = conf.mapStations.find(s => s.type === 'lav')?.label || 'LAV';
-        aipLine1.innerText = `CALL ${lavName}  ->`;
-        miniAipText.innerText = `${lavName} & ${seatName}`;
-        miniAipText.className = `font-lcd text-xs font-bold tracking-wider ${normalColor} truncate max-w-[160px]`;
-        aipLine1.className = `font-lcd text-lg md:text-xl font-bold tracking-widest ${normalColor}`;
-        aipLine2.innerText = `CALL SEAT ${seatName}`;
-        if (mapSeat) mapSeat.className = 'w-7 h-8 rounded bg-sky-500 text-black border border-sky-300 flex items-center justify-center text-[8px] font-bold shadow-[0_0_10px_#0ea5e9]';
-        if (mapLav) mapLav.className = 'w-7 h-8 rounded bg-amber-500 text-black border border-amber-300 flex items-center justify-center text-[8px] font-bold shadow-[0_0_10px_#f59e0b]';
-        return;
-      }
-
-      // 7. LAVATORY ONLY
-      if (state.lavCall) {
-        setLamp('amber', 'active-amber');
-        const lavName = conf.mapStations.find(s => s.type === 'lav')?.label || 'LAV';
-        aipLine1.innerText = `CALL ${lavName}`;
-        miniAipText.innerText = `CALL ${lavName}`;
-        miniAipText.className = `font-lcd text-xs font-bold tracking-wider ${normalColor} truncate max-w-[160px]`;
-        aipLine1.className = `font-lcd text-lg md:text-xl font-bold tracking-widest ${normalColor}`;
-        aipLine2.innerText = 'ATTENDANT ASSISTANCE REQUIRED';
-        if (mapLav) mapLav.className = 'w-7 h-8 rounded bg-amber-500 text-black border border-amber-300 flex items-center justify-center text-[8px] font-bold shadow-[0_0_10px_#f59e0b]';
-        return;
-      }
-
-      // 8. PAX SEAT ONLY
-      if (state.paxCall) {
-        setLamp('blue', 'active-blue');
-        const seatName = conf.mapStations.find(s => s.type === 'seat')?.label || '12C';
-        aipLine1.innerText = `CALL SEAT ${seatName}`;
-        miniAipText.innerText = `SEAT ${seatName}`;
-        miniAipText.className = `font-lcd text-xs font-bold tracking-wider ${normalColor} truncate max-w-[160px]`;
-        aipLine1.className = `font-lcd text-lg md:text-xl font-bold tracking-widest ${normalColor}`;
-        aipLine2.innerText = 'PASSENGER CALL ATTENDANT';
-        if (mapSeat) mapSeat.className = 'w-7 h-8 rounded bg-sky-500 text-black border border-sky-300 flex items-center justify-center text-[8px] font-bold shadow-[0_0_10px_#0ea5e9]';
-        return;
-      }
-
-      // NORMAL STANDBY
-      aipLine1.innerText = 'READY / NORMAL';
-      miniAipText.innerText = 'READY / NORMAL';
-      miniAipText.className = `font-lcd text-xs font-bold tracking-wider ${normalColor} truncate max-w-[160px]`;
-      aipLine1.className = `font-lcd text-lg md:text-xl font-bold tracking-widest ${normalColor}`;
-      aipLine2.innerText = `${conf.name} ONLINE`;
+      topAipLine1.innerText = "SYSTEM READY";
+      topAipLine1.className = "font-mono text-[11px] font-bold text-emerald-400 leading-tight truncate";
+      topAipLine2.innerText = "CABIN NORMAL";
+      topAipLine2.className = "font-mono text-[8px] text-emerald-600 leading-none truncate";
     }
 
-    // ==========================================
-    // 3. Hardware Event Handlers
-    // ==========================================
-    function togglePaxCall() {
-      state.paxCall = !state.paxCall;
-      if (state.paxCall) {
-        audio.playSingleChime();
-        psuCallBtn.className = 'w-12 h-12 rounded-full bg-amber-400 border-2 border-amber-500 flex items-center justify-center transition-all shadow-[0_0_15px_#f59e0b] scale-105';
-        psuCallIcon.className = 'fa-solid fa-person-breastfeeding text-amber-950 text-lg animate-pulse';
-      } else {
-        psuCallBtn.className = 'w-12 h-12 rounded-full bg-slate-200 border-2 border-slate-400 flex items-center justify-center transition-all shadow-md active:scale-95';
-        psuCallIcon.className = 'fa-solid fa-person-breastfeeding text-slate-600 text-lg';
-      }
-      updateCidsState();
-    }
+    function renderLavBoxes() {
+      ['A', 'D', 'E', 'F'].forEach(lav => {
+        const box = document.getElementById(`lavBox${lav}`);
+        const status = document.getElementById(`lavStatus${lav}`);
+        const sens = document.getElementById(`fapSens${lav}`);
+        if (!box) return;
 
-    function toggleReadingLight() {
-      state.readingLight = !state.readingLight;
-      audio.playKeyClick();
-      if (state.readingLight) {
-        readingLightBtn.className = 'w-10 h-10 rounded-full bg-amber-200 border-2 border-amber-400 flex items-center justify-center shadow-[0_0_12px_rgba(251,191,36,0.8)]';
-        readingLightIcon.className = 'fa-solid fa-lightbulb text-amber-600';
+        if (state.lavSmoke.has(lav)) {
+          box.className = "lamp-amber-flash rounded p-1 flex items-center justify-between cursor-pointer transition-all";
+          status.innerText = "SMOKE FLASH";
+          status.className = "text-[8px] font-bold text-black font-mono";
+          if (sens) sens.className = "bg-red-600 text-white font-bold py-1 rounded shadow-lg shadow-red-500/50 animate-pulse";
+        } else if (state.lavRoutine.has(lav)) {
+          box.className = "lamp-amber-steady rounded p-1 flex items-center justify-between cursor-pointer transition-all";
+          status.innerText = "CALL STEADY";
+          status.className = "text-[8px] font-bold text-black font-mono";
+          if (sens) sens.className = "bg-slate-700/60 py-1 rounded border border-slate-600 text-slate-300";
+        } else {
+          box.className = "bg-slate-700/80 hover:bg-slate-600 border border-slate-500 rounded p-1 flex items-center justify-between cursor-pointer transition-all";
+          status.innerText = "NORMAL";
+          status.className = "text-[8px] text-slate-400 font-mono";
+          if (sens) sens.className = "bg-slate-700/60 py-1 rounded border border-slate-600 text-slate-300";
+        }
+      });
+
+      if (state.lavSmoke.size > 0) {
+        fapCautionLight.className = "px-2 py-0.5 rounded text-[9px] font-bold bg-amber-500 text-black border border-amber-300 shadow";
+        fapSmokeLabel.innerText = `SMOKE: ${Array.from(state.lavSmoke).join(', ')}`;
+        fapSmokeLabel.className = "text-red-400 font-bold animate-pulse";
+        btnFapSmokeReset.className = "bg-red-600 text-white border border-red-400 text-[10px] font-bold py-1.5 rounded flex flex-col items-center shadow-lg shadow-red-600/40";
+        btnAapSmokeReset.className = "bg-red-600 text-white border border-red-400 text-[10px] font-bold py-1.5 rounded flex flex-col items-center shadow-lg shadow-red-600/40";
       } else {
-        readingLightBtn.className = 'w-10 h-10 rounded-full bg-slate-300 border-2 border-slate-400 flex items-center justify-center';
-        readingLightIcon.className = 'fa-solid fa-lightbulb text-slate-500';
+        fapCautionLight.className = "px-2 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-700 border border-amber-900";
+        fapSmokeLabel.innerText = "NORMAL";
+        fapSmokeLabel.className = "text-emerald-400 font-bold";
+        btnFapSmokeReset.className = "bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-[10px] font-bold py-1.5 rounded flex flex-col items-center";
+        btnAapSmokeReset.className = "bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-[10px] font-bold py-1.5 rounded flex flex-col items-center";
       }
     }
 
-    function toggleLavCall() {
-      state.lavCall = !state.lavCall;
-      if (state.lavCall) {
-        audio.playSingleChime();
-        lavCallBtn.className = 'w-12 h-12 rounded-2xl bg-amber-500 border-2 border-amber-600 flex items-center justify-center shadow-[0_0_15px_#f59e0b] scale-105';
-        lavCallIcon.className = 'fa-solid fa-bell text-white text-lg animate-pulse';
-        lavStatusPill.innerText = 'CALL ACTIVE';
-        lavStatusPill.className = 'text-[9px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold border border-amber-400 animate-pulse';
-      } else {
-        lavCallBtn.className = 'w-12 h-12 rounded-2xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center transition-all shadow-md active:scale-95';
-        lavCallIcon.className = 'fa-solid fa-bell text-amber-700 text-lg';
-        lavStatusPill.innerText = 'NORMAL';
-        lavStatusPill.className = 'text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300';
-      }
-      updateCidsState();
+    let selectedLav = null;
+    function openLavModal(lav) {
+      selectedLav = lav;
+      document.getElementById('modalLavTitle').innerText = `ĐIỀU KHIỂN NHÀ VỆ SINH LAV ${lav}`;
+      document.getElementById('lavModal').classList.remove('hidden');
     }
 
-    function triggerLavSmoke() {
-      state.lavSmoke = true;
-      lavStatusPill.innerText = 'SMOKE ALARM!';
-      lavStatusPill.className = 'text-[9px] font-mono px-2 py-0.5 rounded bg-red-600 text-white font-bold animate-ping';
+    function closeLavModal() {
+      document.getElementById('lavModal').classList.add('hidden');
+      selectedLav = null;
+    }
 
-      if (currentAircraft === 'B787') {
-        audio.playBoeingSmokeAlarm();
-      } else {
-        audio.playTripleThreeLowChimes();
-      }
+    function submitLavRoutineCall() {
+      if (!selectedLav) return;
+      state.lavSmoke.delete(selectedLav);
+      state.lavRoutine.add(selectedLav);
+      playOneHiChime();
+      renderLavBoxes();
+      updateSystemState();
+      closeLavModal();
+    }
 
-      clearInterval(smokeCountdownInterval);
-      smokeSecondsLeft = 30;
-      smokeCountVal.innerText = smokeSecondsLeft;
-      smokeProgress.style.width = '100%';
+    function submitLavSmokeAlert() {
+      if (!selectedLav) return;
+      state.lavRoutine.delete(selectedLav);
+      state.lavSmoke.add(selectedLav);
+      state.lastEmergencyType = 'SMOKE';
+      startSmokeAuralLoop();
+      renderLavBoxes();
+      updateSystemState();
+      closeLavModal();
+      showEmergencyPopup('SMOKE', selectedLav);
+    }
 
-      smokeCountdownInterval = setInterval(() => {
-        if (!state.lavSmoke) {
-          clearInterval(smokeCountdownInterval);
-          return;
-        }
-        smokeSecondsLeft--;
-        if (smokeSecondsLeft <= 0) {
-          smokeSecondsLeft = 30;
-          if (currentAircraft === 'B787') {
-            audio.playBoeingSmokeAlarm();
-          } else {
-            audio.playTripleThreeLowChimes();
-          }
-        }
-        smokeCountVal.innerText = smokeSecondsLeft;
-        smokeProgress.style.width = `${(smokeSecondsLeft / 30) * 100}%`;
+    function submitLavReset() {
+      if (!selectedLav) return;
+      state.lavRoutine.delete(selectedLav);
+      state.lavSmoke.delete(selectedLav);
+      if (state.lavSmoke.size === 0) stopSmokeAuralLoop();
+      renderLavBoxes();
+      updateSystemState();
+      closeLavModal();
+    }
+
+    function startSmokeAuralLoop() {
+      if (smokeCycleTimer) return;
+      playTripleThreeLowChimes();
+      smokeCountdownBanner.classList.remove('hidden');
+      countdownVal = 30;
+      countdownSecEl.innerText = countdownVal;
+
+      countdownTimer = setInterval(() => {
+        countdownVal--;
+        if (countdownVal <= 0) countdownVal = 30;
+        countdownSecEl.innerText = countdownVal;
       }, 1000);
 
-      updateCidsState();
+      smokeCycleTimer = setInterval(() => {
+        playTripleThreeLowChimes();
+      }, 30000);
+    }
+
+    function stopSmokeAuralLoop() {
+      if (smokeCycleTimer) clearInterval(smokeCycleTimer);
+      if (countdownTimer) clearInterval(countdownTimer);
+      smokeCycleTimer = null;
+      countdownTimer = null;
+      smokeCountdownBanner.classList.add('hidden');
+    }
+
+    function resetSmokeAlert() {
+      state.lavSmoke.clear();
+      stopSmokeAuralLoop();
+      renderLavBoxes();
+      updateSystemState();
+    }
+
+    function showEmergencyPopup(type, extra = '') {
+      state.lastEmergencyType = type;
+      const modal = document.getElementById('emergencyPopupModal');
+      const title = document.getElementById('popupEmerTitle');
+      const content = document.getElementById('popupEmerContent');
+
+      if (type === 'DESCENT') {
+        title.innerText = "DẤU HIỆU: EMERGENCY DESCENT (HẠ ĐỘ CAO KHẨN CẤP)";
+        content.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-amber-400">💡 Cabin Lighting:</b> 100% Bright (sáng tối đa)
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-emerald-400">🚪 Exit Signs:</b> Tự động BẬT (ON)
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-red-400">💺 Fasten Seat Belt:</b> BẬT (ON)
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-red-400">🚭 No Smoking:</b> BẬT (ON)
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-slate-400">🚻 Return To Seat (WC):</b> TẮT (OFF - hành khách ở yên trong WC)
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-red-400">🚨 Đèn trần ACP:</b> RED Flashing nhấp nháy
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800 sm:col-span-2">
+              <b class="text-sky-400">📢 Cockpit PA:</b> <i>"Cockpit speaking, emergency descent, cabin crew seated and fastened."</i>
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800 sm:col-span-2">
+              <b class="text-yellow-400">🔔 Âm thanh Cabin:</b> Triple Hi-Lo Chime nhịp chậm
+            </div>
+          </div>
+        `;
+      } else if (type === 'SMOKE') {
+        title.innerText = `DẤU HIỆU: SMOKE ALERT (BÁO KHÓI TẠI LAV ${extra || 'WC'})`;
+        content.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-amber-400">🔔 Aural Alert:</b> Triple three low chimes in 30s (~392Hz)
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-amber-400">🚨 Đèn trần ACP:</b> AMBER Flashing nhấp nháy
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-amber-400">🚪 Đèn ngoài cửa WC:</b> Flashing Amber (Vàng nhấp nháy)
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-red-400">📟 Bảng AIP:</b> Red LED Flashing + Hiện chữ SMOKE LAV ${extra || 'WC'}
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-amber-400">🖥️ FAP Display:</b> Đèn CAUTION Steady Amber + Hiện ô đỏ tại WC
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-red-400">🔴 Phím SMOKE RESET:</b> Sáng đỏ trên cả FAP và AAP
+            </div>
+          </div>
+        `;
+      } else if (type === 'EVAC') {
+        title.innerText = "DẤU HIỆU: EVACUATION ALERT (CHƯƠNG 10 STM)";
+        content.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-red-400">📢 EVAC Horn:</b> Còi hú liên tục trong khoang khách và trạm tiếp viên
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-red-400">🚨 Đèn trần ACP:</b> RED Flashing nhấp nháy
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-emerald-400">🟢 Phím FAP EVAC CMD:</b> Sáng đứng màu xanh lá (Steady Green)
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800">
+              <b class="text-red-400">🔴 Phím EVAC RESET:</b> Nhấp nháy màu đỏ (Flashes Red) trên FAP & AAP
+            </div>
+            <div class="bg-slate-950 p-2 rounded border border-slate-800 sm:col-span-2">
+              <b class="text-sky-400">📟 Bảng AIP:</b> Red LED Flashing + Màn hình hiện EVACUATION ALERT
+            </div>
+          </div>
+        `;
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function openEmergencyPopup() {
+      if (state.lastEmergencyType) {
+        const extra = state.lavSmoke.size > 0 ? Array.from(state.lavSmoke).join(', ') : '';
+        showEmergencyPopup(state.lastEmergencyType, extra);
+      }
+    }
+
+    function closeEmergencyPopup() {
+      document.getElementById('emergencyPopupModal').classList.add('hidden');
+    }
+
+    function initFuselageLayout() {
+      const bizContainer = document.getElementById('businessCabinRows');
+      const ecoContainer1 = document.getElementById('economyCabinRows1');
+      const ecoContainer2 = document.getElementById('economyCabinRows2');
+
+      ['01', '02'].forEach(r => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = "flex items-center justify-between gap-1 text-[11px] font-mono";
+        rowDiv.innerHTML = `
+          <div class="flex gap-1.5">
+            <button onclick="toggleSeatCall('${r}A')" id="seat-${r}A" class="seat-btn w-9 h-7 rounded bg-amber-600 hover:bg-amber-500 font-bold border border-amber-400 text-white shadow">${r}A</button>
+            <button onclick="toggleSeatCall('${r}C')" id="seat-${r}C" class="seat-btn w-9 h-7 rounded bg-amber-600 hover:bg-amber-500 font-bold border border-amber-400 text-white shadow">${r}C</button>
+          </div>
+          <span class="text-[10px] text-amber-500/70 font-bold px-1">${r}</span>
+          <div class="flex gap-1.5">
+            <button onclick="toggleSeatCall('${r}D')" id="seat-${r}D" class="seat-btn w-9 h-7 rounded bg-amber-600 hover:bg-amber-500 font-bold border border-amber-400 text-white shadow">${r}D</button>
+            <button onclick="toggleSeatCall('${r}G')" id="seat-${r}G" class="seat-btn w-9 h-7 rounded bg-amber-600 hover:bg-amber-500 font-bold border border-amber-400 text-white shadow">${r}G</button>
+          </div>
+        `;
+        bizContainer.appendChild(rowDiv);
+      });
+
+      for (let i = 10; i <= 31; i++) {
+        if (i === 13) continue;
+        const r = i.toString().padStart(2, '0');
+        const hasD = (i !== 17 && i !== 18 && i !== 31);
+        const rowDiv = document.createElement('div');
+        rowDiv.className = "flex items-center justify-between gap-1 text-[10px] font-mono";
+        rowDiv.innerHTML = `
+          <div class="flex gap-1">
+            <button onclick="toggleSeatCall('${r}A')" id="seat-${r}A" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}A</button>
+            <button onclick="toggleSeatCall('${r}B')" id="seat-${r}B" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}B</button>
+            <button onclick="toggleSeatCall('${r}C')" id="seat-${r}C" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}C</button>
+          </div>
+          <span class="text-[9px] text-slate-500 font-bold px-1">${r}</span>
+          <div class="flex gap-1">
+            ${hasD ? `<button onclick="toggleSeatCall('${r}D')" id="seat-${r}D" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}D</button>` : `<div class="w-7 h-6"></div>`}
+            <button onclick="toggleSeatCall('${r}E')" id="seat-${r}E" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}E</button>
+            <button onclick="toggleSeatCall('${r}G')" id="seat-${r}G" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}G</button>
+          </div>
+        `;
+        ecoContainer1.appendChild(rowDiv);
+      }
+
+      for (let i = 32; i <= 44; i++) {
+        const r = i.toString().padStart(2, '0');
+        const rowDiv = document.createElement('div');
+        rowDiv.className = "flex items-center justify-between gap-1 text-[10px] font-mono";
+        const hasLeft = (i !== 32 && i !== 44);
+        rowDiv.innerHTML = `
+          <div class="flex gap-1">
+            ${hasLeft ? `
+              <button onclick="toggleSeatCall('${r}A')" id="seat-${r}A" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}A</button>
+              <button onclick="toggleSeatCall('${r}B')" id="seat-${r}B" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}B</button>
+              <button onclick="toggleSeatCall('${r}C')" id="seat-${r}C" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}C</button>
+            ` : `<div class="w-[88px] h-6 flex items-center justify-center text-[8px] text-slate-600 font-mono">EXIT / GALLEY</div>`}
+          </div>
+          <span class="text-[9px] text-slate-500 font-bold px-1">${r}</span>
+          <div class="flex gap-1">
+            <button onclick="toggleSeatCall('${r}D')" id="seat-${r}D" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}D</button>
+            <button onclick="toggleSeatCall('${r}E')" id="seat-${r}E" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}E</button>
+            <button onclick="toggleSeatCall('${r}G')" id="seat-${r}G" class="seat-btn w-7 h-6 rounded bg-sky-700 hover:bg-sky-600 border border-sky-500 text-white">${r}G</button>
+          </div>
+        `;
+        ecoContainer2.appendChild(rowDiv);
+      }
+    }
+
+    function toggleSeatCall(seatId) {
+      const btn = document.getElementById(`seat-${seatId}`);
+      if (state.activeCalls.has(seatId)) {
+        state.activeCalls.delete(seatId);
+        if (btn) btn.classList.remove('seat-active');
+      } else {
+        state.activeCalls.add(seatId);
+        playOneHiChime();
+        if (btn) btn.classList.add('seat-active');
+      }
+      updateSystemState();
+    }
+
+    function handleHandset(type) {
+      if (type === 'PA') {
+        state.interphone = 'PA';
+      } else if (type === 'EMER') {
+        state.interphone = 'EMER';
+        playTripleHiLoSlow();
+      } else {
+        state.interphone = type;
+        playOneHiLoSlow();
+      }
+      updateSystemState();
+    }
+
+    function startPtt() {
+      if (state.interphone === 'PA') {
+        topAipLine1.innerText = "DIRECT PA IN USE";
+        topAipLine2.innerText = "BROADCASTING CABIN";
+      }
+    }
+
+    function stopPtt() {
+      updateSystemState();
     }
 
     function triggerEmerDescent() {
       state.emerDescent = true;
-      audio.playTripleEmergencyChime();
+      state.lastEmergencyType = 'DESCENT';
+      playTripleHiLoSlow();
 
-      if (emerDescentChimeInterval) clearInterval(emerDescentChimeInterval);
-      emerDescentChimeInterval = setInterval(() => {
-        if (!state.emerDescent) {
-          clearInterval(emerDescentChimeInterval);
-          return;
+      setTimeout(() => {
+        if ('speechSynthesis' in window && state.emerDescent) {
+          window.speechSynthesis.cancel();
+          const paMsg = new SpeechSynthesisUtterance("Cockpit speaking, emergency descent, cabin crew seated and fastened.");
+          paMsg.lang = 'en-US';
+          paMsg.rate = 0.95;
+          window.speechSynthesis.speak(paMsg);
         }
-        audio.playSingleChime(950);
-      }, 2800);
+      }, 1200);
 
-      if ('speechSynthesis' in window && audio.enabled) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance("Cockpit speaking, emergency descent, fasten your seat belt, pull down the oxygen mask and breathe normally.");
-        msg.rate = 1.0;
-        msg.pitch = 0.95;
-        msg.lang = 'en-US';
-        window.speechSynthesis.speak(msg);
+      if (!emerDescentInterval) {
+        emerDescentInterval = setInterval(() => {
+          if (state.emerDescent) playOneHiLoSlow();
+        }, 3200);
       }
 
-      updateCidsState();
+      updateSystemState();
+      showEmergencyPopup('DESCENT');
     }
 
-    function simulateCockpitCall() {
-      state.cockpitCall = true;
-      audio.playHiLoChime();
-      updateCidsState();
-    }
-
-    function triggerEmergencyCall() {
-      state.interphoneTarget = 'EMER';
-      audio.playTripleEmergencyChime();
-      updateCidsState();
-    }
-
-    function pressKey(key) {
-      audio.playKeyClick();
-
-      if (key === 'RESET') {
-        state.handsetBuffer = [];
-        state.interphoneTarget = null;
-        state.cockpitCall = false;
-        state.lavSmoke = false;
-        state.emerDescent = false;
-        clearInterval(smokeCountdownInterval);
-        if (emerDescentChimeInterval) clearInterval(emerDescentChimeInterval);
-        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-
-        handsetDisplay.innerText = 'READY';
-        lavStatusPill.innerText = 'NORMAL';
-        lavStatusPill.className = 'text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300';
-        updateCidsState();
-        return;
+    function toggleEvacAlert() {
+      state.evacAlert = !state.evacAlert;
+      if (state.evacAlert) {
+        state.lastEmergencyType = 'EVAC';
+        startEvacHorn();
+        btnFapEvacCmd.className = "bg-emerald-600 text-white border border-emerald-400 text-[10px] font-bold py-1.5 rounded flex items-center justify-center gap-1 shadow-lg shadow-emerald-500/50";
+        btnEvacReset.className = "bg-red-600 text-white border border-red-400 text-[10px] font-bold py-1.5 rounded flex items-center justify-center gap-1 animate-pulse shadow";
+        evacStatusLabel.innerText = "ACTIVE";
+        evacStatusLabel.className = "text-red-400 font-bold animate-pulse";
+        showEmergencyPopup('EVAC');
+      } else {
+        resetEvacAlert();
       }
-
-      if (key === 'EMER') {
-        triggerEmergencyCall();
-        state.handsetBuffer = ['EMER'];
-        handsetDisplay.innerText = 'EMER CALL ACTIVE';
-        return;
-      }
-
-      const newBuf = [...state.handsetBuffer, key];
-      state.handsetBuffer = newBuf;
-      handsetDisplay.innerText = newBuf.join(' ');
-      const seq = newBuf.join('+');
-
-      if (seq.includes('INTPH+CAPT') || (key === 'CAPT' && newBuf.includes('INTPH'))) {
-        state.interphoneTarget = 'CAPT';
-        state.cockpitCall = false;
-        audio.playHiLoChime();
-        handsetDisplay.innerText = 'CONNECTED: CAPT';
-        state.handsetBuffer = [];
-        updateCidsState();
-      } else if (seq.includes('INTPH+ALL') || (key === 'ALL' && newBuf.includes('INTPH'))) {
-        state.interphoneTarget = 'ALL';
-        audio.playHiLoChime();
-        handsetDisplay.innerText = 'CONNECTED: ALL STATIONS';
-        state.handsetBuffer = [];
-        updateCidsState();
-      } else if (key === 'PA' || seq.includes('PA+ALL')) {
-        // EXACT AIRBUS STANDARD: PA ALL / PA DOES NOT PRODUCE ANY CHIME (SILENT)
-        state.interphoneTarget = 'PA';
-        handsetDisplay.innerText = 'PA ALL: NO CHIME (USE PTT)';
-        state.handsetBuffer = [];
-        updateCidsState();
-      } else if (['1/FWD', '2/MID', '3/EXIT', '4/AFT'].includes(key) && newBuf.includes('INTPH')) {
-        const zone = key.split('/')[1];
-        state.interphoneTarget = zone;
-        audio.playHiLoChime();
-        handsetDisplay.innerText = `CONNECTED: ${zone}`;
-        state.handsetBuffer = [];
-        updateCidsState();
-      }
-
-      if (key === 'PILOT') {
-        state.interphoneTarget = 'PILOT';
-        audio.playHiLoChime();
-        handsetDisplay.innerText = 'PILOT (31) CONNECTED';
-        state.handsetBuffer = [];
-        updateCidsState();
-      } else if (key === 'CALL_CABIN') {
-        state.interphoneTarget = 'CABIN';
-        audio.playHiLoChime();
-        handsetDisplay.innerText = 'CABIN ATTND CALLED';
-        state.handsetBuffer = [];
-        updateCidsState();
-      }
+      updateSystemState();
     }
 
-    function startPtt() {
-      state.pttActive = true;
-      pttBtn.classList.add('active-ptt');
-      audio.playKeyClick();
-      updateCidsState();
-    }
-    function endPtt() {
-      state.pttActive = false;
-      pttBtn.classList.remove('active-ptt');
-      updateCidsState();
+    function resetEvacAlert() {
+      state.evacAlert = false;
+      stopEvacHorn();
+      btnFapEvacCmd.className = "bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] font-bold py-1.5 rounded flex items-center justify-center gap-1";
+      btnEvacReset.className = "bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 text-[10px] font-bold py-1.5 rounded flex items-center justify-center gap-1";
+      evacStatusLabel.innerText = "OFF";
+      evacStatusLabel.className = "text-slate-500";
+      updateSystemState();
     }
 
-    function masterReset() {
-      audio.playKeyClick();
-      clearInterval(smokeCountdownInterval);
-      if (emerDescentChimeInterval) clearInterval(emerDescentChimeInterval);
+    function systemReset() {
+      stopSmokeAuralLoop();
+      stopEvacHorn();
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (emerDescentInterval) { clearInterval(emerDescentInterval); emerDescentInterval = null; }
 
-      state.paxCall = false;
-      state.readingLight = false;
-      state.lavCall = false;
-      state.lavSmoke = false;
+      state.activeCalls.clear();
+      state.lavRoutine.clear();
+      state.lavSmoke.clear();
+      state.interphone = null;
       state.emerDescent = false;
-      state.cockpitCall = false;
-      state.interphoneTarget = null;
-      state.handsetBuffer = [];
-      state.pttActive = false;
+      state.evacAlert = false;
+      state.lastEmergencyType = null;
 
-      psuCallBtn.className = 'w-12 h-12 rounded-full bg-slate-200 border-2 border-slate-400 flex items-center justify-center transition-all shadow-md active:scale-95';
-      psuCallIcon.className = 'fa-solid fa-person-breastfeeding text-slate-600 text-lg';
-      readingLightBtn.className = 'w-10 h-10 rounded-full bg-slate-300 border-2 border-slate-400 flex items-center justify-center';
-      readingLightIcon.className = 'fa-solid fa-lightbulb text-slate-500';
-      lavCallBtn.className = 'w-12 h-12 rounded-2xl bg-amber-100 border-2 border-amber-300 flex items-center justify-center transition-all shadow-md active:scale-95';
-      lavCallIcon.className = 'fa-solid fa-bell text-amber-700 text-lg';
-      lavStatusPill.innerText = 'NORMAL';
-      lavStatusPill.className = 'text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold border border-emerald-300';
-      handsetDisplay.innerText = 'READY';
+      document.querySelectorAll('.seat-active').forEach(el => el.classList.remove('seat-active'));
 
-      updateCidsState();
+      closeEmergencyPopup();
+      renderLavBoxes();
+      resetEvacAlert();
+      updateSystemState();
     }
 
-    window.onload = function() {
-      switchAircraft('A321');
-
-      window.addEventListener('scroll', () => {
-        const header = document.getElementById('mainHeader');
-        const miniHud = document.getElementById('stickyMiniHud');
-        if (window.scrollY > 70) {
-          header.classList.add('shadow-[0_10px_30px_rgba(0,0,0,0.85)]', 'border-slate-700');
-          miniHud.classList.remove('hidden');
-          miniHud.classList.add('flex');
-        } else {
-          header.classList.remove('shadow-[0_10px_30px_rgba(0,0,0,0.85)]', 'border-slate-700');
-          miniHud.classList.add('hidden');
-          miniHud.classList.remove('flex');
-        }
-      });
-    };
+    window.addEventListener('DOMContentLoaded', () => {
+      initFuselageLayout();
+      updateSystemState();
+      renderLavBoxes();
+    });
   </script>
 </body>
 </html>

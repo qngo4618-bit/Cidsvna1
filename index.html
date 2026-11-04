@@ -127,7 +127,7 @@
           </div>
         </div>
 
-        <!-- Màn hình cảm biến WC trên FAP -->
+        <!-- Màn hình cảm biến LAV trên FAP -->
         <div class="bg-slate-950 border border-slate-800 rounded-lg p-2 mb-2">
           <div class="flex justify-between text-[10px] font-mono text-slate-400 mb-1 border-b border-slate-800 pb-1">
             <span>SMOKE SENSORS</span>
@@ -211,12 +211,12 @@
       <div class="flex items-center justify-between pb-2.5 border-b border-slate-800 mb-2.5">
         <div>
           <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Sơ đồ máy bay A321 (Vertical Layout)</span>
-          <p class="text-[10px] text-slate-400">Bấm ghế: Gọi tiếp viên (Vàng steady) • Bấm WC: Gọi hoặc Báo khói</p>
+          <p class="text-[10px] text-slate-400">Bấm ghế: Gọi tiếp viên (Vàng steady) • Bấm LAV: Gọi hoặc Báo khói</p>
         </div>
         <div class="flex items-center gap-2 text-[10px] font-mono">
           <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-amber-600 rounded"></span> C-Class</span>
           <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-sky-600 rounded"></span> Y-Class</span>
-          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-slate-700 rounded border border-slate-500"></span> WC</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-slate-700 rounded border border-slate-500"></span> LAV</span>
           <span class="flex items-center gap-1"><span class="w-1.5 h-3 bg-sky-400 rounded-sm"></span> Aisle Light</span>
         </div>
       </div>
@@ -285,7 +285,7 @@
           <div id="economyCabinRows2" class="flex flex-col gap-1"></div>
         </div>
 
-        <!-- TAIL / GALLEY 4 / DOOR 4L & 4R / 3 WC SAU (LAV D, E, F) -->
+        <!-- TAIL / GALLEY 4 / DOOR 4L & 4R / 3 LAV SAU (LAV D, E, F) -->
         <div class="w-full max-w-md border-t-2 border-dashed border-slate-800 pt-2.5 flex flex-col items-center">
           <span class="text-[9px] text-slate-500 font-mono tracking-widest uppercase mb-1.5">▼ AFT CABIN / DOOR 4L & 4R ▼</span>
           
@@ -344,18 +344,18 @@
     </div>
   </div>
 
-  <!-- POPUP ĐIỀU KHIỂN NHÀ VỆ SINH (LAVATORY MODAL) -->
+  <!-- POPUP ĐIỀU KHIỂN Lavatory (LAV) (LAVATORY MODAL) -->
   <div id="lavModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3">
     <div class="bg-slate-900 border-2 border-slate-700 rounded-2xl p-4 sm:p-5 max-w-sm w-full shadow-2xl flex flex-col gap-3">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2">
         <h3 class="text-xs sm:text-sm font-bold text-slate-100 flex items-center gap-2">
           <i class="fa-solid fa-restroom text-amber-500"></i>
-          <span id="modalLavTitle">ĐIỀU KHIỂN NHÀ VỆ SINH</span>
+          <span id="modalLavTitle">ĐIỀU KHIỂN Lavatory (LAV)</span>
         </h3>
         <button onclick="closeLavModal()" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <p class="text-[11px] text-slate-400">Chọn mô phỏng hành vi tín hiệu tại WC này theo Safety Training Manual:</p>
+      <p class="text-[11px] text-slate-400">Chọn mô phỏng hành vi tín hiệu tại LAV này theo Safety Training Manual:</p>
 
       <div class="flex flex-col gap-2 pt-1">
         <button onclick="submitLavRoutineCall()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-between shadow">
@@ -369,7 +369,7 @@
         </button>
 
         <button onclick="submitLavReset()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center border border-slate-700">
-          <i class="fa-solid fa-rotate-left mr-1.5"></i> TẮT TÍN HIỆU TẠI WC NÀY
+          <i class="fa-solid fa-rotate-left mr-1.5"></i> TẮT TÍN HIỆU TẠI LAV NÀY
         </button>
       </div>
     </div>
@@ -479,25 +479,44 @@
       setTimeout(playOneHiLoSlow, 1900);
     }
 
-    function startEvacHorn() {
-      if (evacOsc) return;
+        // ÂM THANH EVACUATION: TÍT TÍT TÍT LIÊN TỤC (RAPID REPEATING BEEPS)
+    let evacBeepTimer = null;
+
+    function playSingleEvacBeep() {
       try {
         const ctx = getAudio();
-        evacOsc = ctx.createOscillator();
-        evacGain = ctx.createGain();
-        evacOsc.type = 'sawtooth';
-        evacOsc.frequency.setValueAtTime(950, ctx.currentTime);
-        evacGain.gain.setValueAtTime(0.28, ctx.currentTime);
-        evacOsc.connect(evacGain);
-        evacGain.connect(ctx.destination);
-        evacOsc.start();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = ctx.currentTime;
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1100, t); // Tần số tiếng tít đanh, rõ
+        gain.gain.setValueAtTime(0.28, t);
+        gain.gain.setValueAtTime(0.28, t + 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.16);
       } catch (e) { console.warn(e); }
     }
 
+    function startEvacHorn() {
+      if (evacBeepTimer) return;
+      playSingleEvacBeep();
+      // Nhịp tít tít tít liên tục: 220ms mỗi tiếng tít
+      evacBeepTimer = setInterval(() => {
+        if (state.evacAlert) {
+          playSingleEvacBeep();
+        } else {
+          stopEvacHorn();
+        }
+      }, 220);
+    }
+
     function stopEvacHorn() {
-      if (evacOsc) {
-        try { evacOsc.stop(); } catch(e) {}
-        evacOsc = null;
+      if (evacBeepTimer) {
+        clearInterval(evacBeepTimer);
+        evacBeepTimer = null;
       }
     }
 
@@ -563,7 +582,7 @@
       const hasSmoke = state.lavSmoke.size > 0;
       const hasLavCall = state.lavRoutine.size > 0;
       const hasSeatCall = state.activeCalls.size > 0;
-      const hasIntercom = state.interphone && state.interphone !== 'PA' && state.interphone !== 'EMER';
+      const hasIntercom = state.interphone && !state.interphone.startsWith('PA') && state.interphone !== 'INTPH_WAIT' && state.interphone !== 'EMER';
       const hasEmerRed = state.emerDescent || state.evacAlert || (state.interphone === 'EMER');
 
       if (hasSmoke) {
@@ -638,9 +657,9 @@
       topAipRedLed.className = "w-2.5 h-2.5 rounded-full bg-red-950 border border-red-800";
       btnViewSigns.classList.add('hidden');
 
-      if (state.interphone) {
-                if (state.interphone === 'PA') {
-          topAipLine1.innerText = "PA ALL: NO CHIME";
+            if (state.interphone) {
+        if (state.interphone.startsWith('PA')) {
+          topAipLine1.innerText = state.interphone === 'PA' ? "PA: READY" : `${state.interphone}: NO CHIME`;
           topAipLine1.className = "font-mono text-[11px] font-bold text-emerald-400 leading-tight truncate";
           topAipLine2.innerText = "PRESS PTT TO SPEAK";
           topAipLine2.className = "font-mono text-[8px] text-emerald-600 leading-none truncate";
@@ -725,7 +744,7 @@
     let selectedLav = null;
     function openLavModal(lav) {
       selectedLav = lav;
-      document.getElementById('modalLavTitle').innerText = `ĐIỀU KHIỂN NHÀ VỆ SINH LAV ${lav}`;
+      document.getElementById('modalLavTitle').innerText = `ĐIỀU KHIỂN LAVATORY ${lav}`;
       document.getElementById('lavModal').classList.remove('hidden');
     }
 
@@ -822,7 +841,7 @@
               <b class="text-red-400">🚭 No Smoking:</b> BẬT (ON)
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
-              <b class="text-slate-400">🚻 Return To Seat (WC):</b> TẮT (OFF - hành khách ở yên trong WC)
+              <b class="text-slate-400">🚻 Return To Seat (LAV):</b> TẮT (OFF - hành khách ở yên trong LAV)
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
               <b class="text-red-400">🚨 Đèn trần ACP:</b> RED Flashing nhấp nháy
@@ -831,12 +850,12 @@
               <b class="text-sky-400">📢 Cockpit PA:</b> <i>"Cockpit speaking, emergency descent, cabin crew seated and fastened."</i>
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800 sm:col-span-2">
-              <b class="text-yellow-400">🔔 Âm thanh Cabin:</b> Triple Hi-Lo Chime nhịp chậm
+              <b class="text-yellow-400">🔔 Âm thanh Cabin:</b> Không có âm thanh chuông cảnh báo (No Chime)
             </div>
           </div>
         `;
       } else if (type === 'SMOKE') {
-        title.innerText = `DẤU HIỆU: SMOKE ALERT (BÁO KHÓI TẠI LAV ${extra || 'WC'})`;
+        title.innerText = `DẤU HIỆU: SMOKE ALERT (BÁO KHÓI TẠI LAV ${extra || 'LAV'})`;
         content.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
@@ -846,13 +865,13 @@
               <b class="text-amber-400">🚨 Đèn trần ACP:</b> AMBER Flashing nhấp nháy
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
-              <b class="text-amber-400">🚪 Đèn ngoài cửa WC:</b> Flashing Amber (Vàng nhấp nháy)
+              <b class="text-amber-400">🚪 Đèn ngoài cửa LAV:</b> Flashing Amber (Vàng nhấp nháy)
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
-              <b class="text-red-400">📟 Bảng AIP:</b> Red LED Flashing + Hiện chữ SMOKE LAV ${extra || 'WC'}
+              <b class="text-red-400">📟 Bảng AIP:</b> Red LED Flashing + Hiện chữ SMOKE LAV ${extra || 'LAV'}
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
-              <b class="text-amber-400">🖥️ FAP Display:</b> Đèn CAUTION Steady Amber + Hiện ô đỏ tại WC
+              <b class="text-amber-400">🖥️ FAP Display:</b> Đèn CAUTION Steady Amber + Hiện ô đỏ tại LAV
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
               <b class="text-red-400">🔴 Phím SMOKE RESET:</b> Sáng đỏ trên cả FAP và AAP
@@ -864,7 +883,7 @@
         content.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
-              <b class="text-red-400">📢 EVAC Horn:</b> Còi hú liên tục trong khoang khách và trạm tiếp viên
+              <b class="text-red-400">📢 Âm thanh EVAC:</b> Âm thanh "tít tít tít" liên tục trong khoang khách và trạm tiếp viên
             </div>
             <div class="bg-slate-950 p-2 rounded border border-slate-800">
               <b class="text-red-400">🚨 Đèn trần ACP:</b> RED Flashing nhấp nháy
@@ -991,33 +1010,42 @@
       updateSystemState();
     }
 
-    let intphPreselect = false;
+            let intphPreselect = false;
+    let paPreselect = false;
 
     function handleHandset(type) {
       if (type === 'PA') {
         intphPreselect = false;
+        paPreselect = true;
         state.interphone = 'PA';
-        // PA ALL: Hoàn toàn không phát chuông (Silent)
+        // Chế độ PA: Im lặng hoàn toàn (No Chime)
         updateSystemState();
       } else if (type === 'INTPH') {
-        // BẤM INTPH ĐƠN LẺ: KHÔNG CÓ TIẾNG, CHỜ KẾT HỢP VỚI TRẠM ĐÍCH
+        paPreselect = false;
         intphPreselect = true;
         state.interphone = 'INTPH_WAIT';
+        // Bấm INTPH đơn lẻ: im lặng, chờ chọn trạm đích
         updateSystemState();
       } else if (type === 'EMER') {
         intphPreselect = false;
+        paPreselect = false;
         state.interphone = 'EMER';
         playTripleHiLoSlow();
         updateSystemState();
       } else {
-        // CÁC TRẠM: FWD, MID, EXIT, AFT, ALL, CAPT
-        if (intphPreselect) {
-          // KHI KẾT HỢP (INTPH + TRẠM): PHÁT TIẾNG CHUÔNG CHUẨN HI-LO
+        // CÁC PHÍM TRẠM: ALL, CAPT, FWD, MID, EXIT, AFT
+        if (paPreselect) {
+          // BẤM PA + ALL HOẶC PA + TRẠM: TUYỆT ĐỐI KHÔNG CÓ TIẾNG KÊU (NO CHIME)
+          state.interphone = 'PA ' + type;
+          paPreselect = false;
+          // Im lặng tuyệt đối, không phát âm thanh
+        } else if (intphPreselect) {
+          // KHI KẾT HỢP INTPH + TRẠM: PHÁT 1 TIẾNG HI-LO CHUẨN
           state.interphone = 'INTPH ' + type;
           intphPreselect = false;
           playOneHiLoSlow();
         } else {
-          // Bấm gọi trạm trực tiếp: phát tiếng chuông
+          // Bấm trực tiếp trạm đàm thoại nội bộ
           state.interphone = type;
           playOneHiLoSlow();
         }
@@ -1025,8 +1053,8 @@
       }
     }
 
-    function startPtt() {
-      if (state.interphone === 'PA') {
+        function startPtt() {
+      if (state.interphone && state.interphone.startsWith('PA')) {
         topAipLine1.innerText = "DIRECT PA IN USE";
         topAipLine2.innerText = "BROADCASTING CABIN";
       }
@@ -1036,25 +1064,18 @@
       updateSystemState();
     }
 
-    function triggerEmerDescent() {
+        function triggerEmerDescent() {
       state.emerDescent = true;
       state.lastEmergencyType = 'DESCENT';
-      playTripleHiLoSlow();
 
-      setTimeout(() => {
-        if ('speechSynthesis' in window && state.emerDescent) {
-          window.speechSynthesis.cancel();
-          const paMsg = new SpeechSynthesisUtterance("Cockpit speaking, emergency descent, cabin crew seated and fastened.");
-          paMsg.lang = 'en-US';
-          paMsg.rate = 0.95;
-          window.speechSynthesis.speak(paMsg);
-        }
-      }, 1200);
-
-      if (!emerDescentInterval) {
-        emerDescentInterval = setInterval(() => {
-          if (state.emerDescent) playOneHiLoSlow();
-        }, 3200);
+      // EMERGENCY DESCENT: KHÔNG CÓ ÂM THANH CẢNH BÁO (NO CHIME)
+      // PHÁT ĐOẠN ĐỌC PA CỦA COCKPIT QUA WEB SPEECH API
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const paMsg = new SpeechSynthesisUtterance("Cockpit speaking, emergency descent, cabin crew seated and fastened.");
+        paMsg.lang = 'en-US';
+        paMsg.rate = 0.95;
+        window.speechSynthesis.speak(paMsg);
       }
 
       updateSystemState();
@@ -1098,6 +1119,7 @@
       state.lavSmoke.clear();
       state.interphone = null;
       intphPreselect = false;
+      paPreselect = false;
       state.emerDescent = false;
       state.evacAlert = false;
       state.lastEmergencyType = null;
